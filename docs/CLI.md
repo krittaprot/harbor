@@ -114,6 +114,60 @@ calling terminal/agent; denial or a 30-second helper timeout produces an error. 
 do not access login apps unless `--include-login` is requested. The CLI does not update the
 desktop's saved login-path cache.
 
+## Diagnose and adopt from an agent
+
+```bash
+harbor diagnose com.harbor.worker
+harbor diagnose worker > harbor-report.json
+harbor preview adopt worker as com.harbor.worker
+harbor adopt worker as com.harbor.worker --yes
+```
+
+`diagnose` accepts a job label, service ID, or unique unmanaged group name/key. It returns
+current job/process information, findings with stable codes, bounded stdout/stderr tails
+(32 KiB each), and the last recorded adoption attempt. It is read-only and does not run the
+target command. Archived user plists and saved adoption reports can still be diagnosed by
+label. In the app, **Copy report** copies the complete error, context, diagnostics and reviewed
+plist; **Copy plist** copies just the preview. Process rows also have **Copy report**.
+
+`preview adopt` uses the same identity checks and plist generator as the app. Actual adoption
+requires `--yes` and validates the fresh preview again. Defaults: start at login, KeepAlive,
+save logs, leave original copies running. Add `--stop-originals` to both preview and adoption
+if you want original copies stopped with SIGTERM **only after** the new agent is ready.
+Optional `--no-login`, `--no-keep-alive`, and `--no-logs` match the app's switches.
+Matching unloaded plists may be reused; different contents are never overwritten.
+
+Human-mode adoption prints progress to stderr. Agent mode returns one JSON response, including
+progress and results on success. A failed apply returns `error.code: "adoption_failed"`,
+exit 1, and `error.details` with progress and diagnostics. The last attempt is stored under
+`~/Library/Application Support/Harbor/adoptions/<label>.json`. Preview refusal returns exit 4.
+Diagnosis reports do not assert health just because a process is registered or listening.
+
+Archive an obsolete, **unloaded** user LaunchAgent without deleting it:
+
+```bash
+harbor preview archive com.harbor.worker
+harbor archive com.harbor.worker --yes
+harbor diagnose com.harbor.worker
+```
+
+The file moves into `~/Library/LaunchAgents/.harbor-archive/`. Loaded jobs, system jobs,
+symlinked source plists and conflicting archive destinations are refused.
+
+### Self-managed services
+
+OpenCode V2's `opencode serve --service` is a shared, internally managed service, not a
+standalone command to duplicate under launchd. Harbor recognizes it as `Managed` when its
+user-owned PID, command and listening port match OpenCode's service registration. Its report
+includes the public PID/URL, never registry credentials. It stays visible but is excluded
+from missing-agent warning counts; this is not a reboot-recovery guarantee. Adopting the
+internal command is refused with guidance to use `opencode service status` and
+`opencode api get /api/info`. If unhealthy, OpenCode provides `opencode service restart`.
+
+Verified owner case: a second invocation exited 0 in 0.08s with empty output while the
+existing shared service at PID 3110 remained healthy. The redundant, unloaded
+`com.harbor.opencode.exe` plist was archived through Harbor; the live service was not restarted.
+
 ## Service controls
 
 ```bash
@@ -200,6 +254,12 @@ python3 scripts/cli-smoke.py "$HOME/.local/bin/harbor" # installed CLI
 The desktop and CLI share `scanner.rs`, `grouping.rs`, `health.rs`, `operations.rs`, plist
 validation and snapshot comparison. The CLI entry point is `src-tauri/src/bin/harbor.rs`;
 `src-tauri/src/cli.rs` owns argument parsing and the versioned response contract.
+
+Adoption uses shared `adopt::preview_group`/`apply_group`; reports use `diagnostics.rs`.
+`scripts/adopt-cli-smoke.py` exercises successful adoption and a deliberate readiness timeout,
+saved diagnostics, archival and graceful original-copy cleanup against owned fixtures. Build
+the debug CLI with `--features smoke-test --bin harbor` first so only the harness's verified
+fixture processes are exposed as unmanaged. Normal release builds do not include this hook.
 
 Verified 2026-10-15: 28 Rust unit tests and three CLI process-contract tests passed; clippy
 with all targets/features and warnings denied passed. The owned-fixture smoke passed against

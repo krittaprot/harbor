@@ -34,6 +34,8 @@ export const setSettings = (notifications: boolean, startAtLogin: boolean) =>
 export const openUrl = (url: string) => invoke<void>("open_url", { url })
 export const showMain = (view?: string) => invoke<void>("show_main", { view })
 export const quitHarbor = () => invoke<void>("quit_harbor")
+export const diagnoseTarget = (target: string) => invoke<unknown>("diagnose_target", { target })
+export const copyText = (text: string) => invoke<void>("copy_text", { text })
 export type AdoptOptions = {
   run_at_load: boolean
   keep_alive: boolean

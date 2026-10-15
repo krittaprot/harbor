@@ -1,15 +1,17 @@
 import { act, fireEvent, render, screen, waitFor, cleanup } from "@testing-library/react"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { AdoptSheet } from "./AdoptSheet"
-import { adoptApply, adoptPreview, type AdoptionProgress } from "@/lib/harbor"
+import { adoptApply, adoptPreview, copyText, diagnoseTarget, type AdoptionProgress } from "@/lib/harbor"
 import type { UnmanagedGroup } from "@/types"
 
-vi.mock("@/lib/harbor", () => ({ adoptApply: vi.fn(), adoptPreview: vi.fn() }))
+vi.mock("@/lib/harbor", () => ({ adoptApply: vi.fn(), adoptPreview: vi.fn(), copyText: vi.fn(), diagnoseTarget: vi.fn() }))
 const group: UnmanagedGroup = { key: "fixture", name: "fixture", copies: [], ports: [], verdict: "Unknown", app_path: null, hint: null }
 beforeEach(() => {
   vi.clearAllMocks()
   HTMLElement.prototype.scrollTo = vi.fn()
   vi.mocked(adoptPreview).mockResolvedValue("<plist>fixture</plist>")
+  vi.mocked(diagnoseTarget).mockResolvedValue({ findings: ["test finding"] })
+  vi.mocked(copyText).mockResolvedValue(undefined)
 })
 afterEach(cleanup)
 
@@ -39,6 +41,12 @@ it("keeps progress visible, prevents duplicate submission, and summarizes rollba
   expect(screen.getByRole("button", { name: "Retry adoption" })).toBeEnabled()
   expect(adoptApply).toHaveBeenCalledTimes(1)
   expect(done).toHaveBeenCalledTimes(1)
+  fireEvent.click(screen.getByRole("button", { name: "Copy report" }))
+  expect(await screen.findByText("Copied", { exact: true })).toBeVisible()
+  const copied = vi.mocked(copyText).mock.calls[0][0]
+  expect(copied).toContain("launchctl diagnostics: fixture")
+  expect(copied).toContain("test finding")
+  expect(copied).toContain("<plist>fixture</plist>")
 })
 
 it("blocks adoption when the preview detects a different existing plist", async () => {

@@ -64,9 +64,9 @@ covered fixed progress while scrolling, failure diagnostics and 375/768/1100px l
 `docs/verification/harbor-adoption-{progress,failure}.png` are Chromium renders of the built
 UI with mocked adoption progress/failure, not captures of an actual adoption failure.
 
-Owner-reported `com.harbor.opencode.exe` readiness failure remains unresolved: screenshot shows
+Owner-reported `com.harbor.opencode.exe` readiness failure was initially unresolved: screenshot shows
 last exit 0 and no running PID; both log files were empty. Only read-only log inspection was
-performed. Its retained plist and original process were not changed. Follow-up is in project Todos.
+performed at that point. The subsequent investigation and resolution are recorded below.
 
 Follow-up: fixed retry failing with “File exists (os error 17).” Preview checks existing plists;
 an identical unloaded file is reused without rewriting it. Different contents are rejected with
@@ -76,7 +76,43 @@ now offer **Retry adoption** while preview conflicts still block submission. Uni
 file content/inode/mtime preservation, conflicts and symlink rejection. Native owned-fixture
 smoke now loads an agent, unloads it leaving its plist, then successfully retries with that file.
 Verified 49 frontend tests, 31 Rust unit + 4 CLI tests, lint and clippy; normal release/debug
-bundles rebuilt and signed after smoke. The separate OpenCode readiness issue remains open.
+bundles rebuilt and signed after smoke. The OpenCode cause was investigated next.
+
+## Copy reports, CLI adoption, and OpenCode resolution (2026-10-15)
+
+The adoption sheet now has native **Copy report** and **Copy plist** actions; process rows can
+copy a diagnostic report too. Reports contain context, full errors, log tails, findings and
+saved adoption stages/results. CLI commands: `diagnose TARGET`, `preview adopt GROUP as LABEL`,
+`adopt GROUP as LABEL --yes`, `preview archive LABEL`, `archive LABEL --yes`. App/CLI share the
+same implementation and validations. Attempts persist in Harbor's `adoptions/<label>.json`.
+
+Root cause confirmed for OpenCode V2.0.29: the existing shared service registered at PID 3110,
+http://127.0.0.1:49374, was healthy (`opencode api get /api/info`). A duplicate invocation of
+the plist's exact `serve --service` command under launchd-like environment exited 0 in 0.08s
+with empty stdout/stderr; registration and live PID remained unchanged. OpenCode documents
+one shared background service per user, automatically discovered/started by clients:
+https://opencode.ai/v2/docs/cli and https://opencode.ai/v2/docs/troubleshooting.
+
+Harbor now corroborates OpenCode registry PID/URL with the user-owned process command and port,
+marks the group `Managed`, and removes adoption/stop/temporary actions for that group. Its
+own lifecycle is explained, rather than interpreting PPID 1 as proof of abandonment. The shared
+adoption core refuses internal `opencode serve --service` commands with actionable guidance.
+`Managed` is not a promise of reboot recovery. Other unmanaged groups remain reviewable.
+
+The owner's redundant **unloaded** `com.harbor.opencode.exe` plist was archived using the new
+CLI into `~/Library/LaunchAgents/.harbor-archive/com.harbor.opencode.exe.plist`. The original
+PID 3110 still answered the API afterward. No live owner service was restarted or stopped.
+Its diagnosis remains available by label, including the archived plist and empty logs.
+The project investigation todo is completed.
+
+CLI fixture acceptance covered dry-run, success, deliberate no-autostart readiness failure,
+rollback with originals preserved, persisted diagnostics, archive and diagnosis after archive,
+then successful adoption with SIGTERM. All test-owned agents/processes/files were cleaned up.
+Verification passed: 49 frontend tests, 33 Rust unit + 4 CLI contract tests, lint, clippy,
+CLI end-to-end smoke and native WebKit adoption/report smoke. Browser checks verified report
+and plist copying, clipboard error feedback, Managed-row actions and narrow layouts with
+mocked IPC/clipboard; `docs/verification/harbor-copy-report.png` is illustrative built UI.
+Normal release/debug bundles and installed CLI refreshed after testing; release signature verified.
 
 ## Read first
 

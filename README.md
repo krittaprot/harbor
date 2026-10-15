@@ -67,6 +67,8 @@ harbor health crystal-blood
 harbor preview restart 3things
 harbor temporary figma-console-mcp
 harbor review figma-console-mcp
+harbor diagnose opencode.exe
+harbor preview adopt worker as com.harbor.worker
 ```
 
 The CLI works without the desktop app running. It shares the app's scanner and mutation

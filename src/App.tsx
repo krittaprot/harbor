@@ -182,6 +182,11 @@ function App() {
               })
             }
             adopt={setAdopt}
+            copyReport={(g) => void run(async () => {
+              const report = await api.diagnoseTarget(g.key)
+              await api.copyText(JSON.stringify(report, null, 2))
+              return ["Diagnostic report copied"]
+            })}
             stop={(g) =>
               setConfirm({
                 title: `Stop ${g.name}?`,

@@ -265,6 +265,7 @@ export function Services({
   adopt,
   stop,
   ignore,
+  copyReport,
 }: {
   snapshot: Snapshot
   filter: Filter
@@ -279,6 +280,7 @@ export function Services({
   adopt: (g: UnmanagedGroup) => void
   stop: (g: UnmanagedGroup) => void
   ignore: (g: UnmanagedGroup) => void
+  copyReport: (g: UnmanagedGroup) => void
 }) {
   const [search, setSearch] = useState("")
   const all = s.services.filter((x) => !x.apple)
@@ -421,7 +423,7 @@ export function Services({
               <div>
                 <h2>Running without a launch agent</h2>
                 <p>
-                  Mark intentionally short-lived processes as temporary to
+                  Some processes are managed by their own application. Mark intentionally short-lived processes as temporary to
                   exclude them from missing-agent warnings. This is remembered
                   for all copies of the same command group, including future runs.
                 </p>
@@ -431,15 +433,15 @@ export function Services({
               <div className="h-unmanaged-row" key={g.key}>
                 <ServiceTile
                   icon="terminal"
-                  tint={g.verdict === "Expected" ? "graphite" : "pink"}
+                  tint={["Expected", "Managed"].includes(g.verdict) ? "graphite" : "pink"}
                 />
                 <div className="h-grow">
                   <strong>
                     {g.name}{" "}
                     <span
-                      className={`h-pill ${g.verdict === "Expected" ? "h-neutral" : "h-warn"}`}
+                      className={`h-pill ${["Expected", "Managed"].includes(g.verdict) ? "h-neutral" : "h-warn"}`}
                     >
-                      {g.verdict === "Expected" ? "Temporary" : g.verdict}
+                      {g.verdict === "Expected" ? "Temporary" : g.verdict === "Managed" ? "Managed by OpenCode" : g.verdict}
                       {g.copies.length > 1
                         ? ` · ${g.copies.length} copies`
                         : ""}
@@ -456,9 +458,11 @@ export function Services({
                       Intentionally temporary · not expected after restart
                     </p>
                   )}
+                  {g.verdict === "Managed" && <p className="h-sub">{g.hint}</p>}
                 </div>
                 <Ports ports={g.ports} />
                 <div className="h-wrap">
+                  {g.verdict !== "Managed" && <>
                   <button
                     className="h-button h-small h-tinted"
                     onClick={() => adopt(g)}
@@ -483,6 +487,8 @@ export function Services({
                       ? "Undo temporary"
                       : "Mark temporary"}
                   </button>
+                  </>}
+                  <button className="h-button h-small" disabled={busy} onClick={() => copyReport(g)}>Copy report</button>
                 </div>
               </div>
             ))}

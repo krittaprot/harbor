@@ -1021,6 +1021,7 @@ button:disabled {
 .h-adopt-steps .is-done { color: var(--h-blue); }
 .h-adopt-progress.is-error .h-adopt-track > span { background: var(--h-red); }
 .h-adopt-error { flex-shrink: 0; overflow-wrap: anywhere; }
+.h-adopt-error > .h-button { display: flex; width: fit-content; margin-bottom: 10px; }
 .h-adopt-error p { margin: 8px 0; }
 .h-adopt-error summary { cursor: pointer; font-weight: 600; margin-top: 10px; }
 .h-adopt-error pre {

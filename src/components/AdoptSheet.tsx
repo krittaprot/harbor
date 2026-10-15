@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { Check, LoaderCircle, TriangleAlert } from "lucide-react"
+import { Check, Copy, LoaderCircle, TriangleAlert } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { adoptPreview, adoptApply, type AdoptOptions, type AdoptionProgress } from "@/lib/harbor"
+import { adoptPreview, adoptApply, copyText, diagnoseTarget, type AdoptOptions, type AdoptionProgress } from "@/lib/harbor"
 import type { UnmanagedGroup } from "@/types"
 import { ServiceTile } from "./ServiceTile"
 export function AdoptSheet({
@@ -36,6 +36,23 @@ export function AdoptSheet({
   const applying = useRef(false)
   const scroll = useRef<HTMLDivElement>(null)
   const [applyFailed, setApplyFailed] = useState(false)
+  const [copyStatus, setCopyStatus] = useState("")
+  async function copyReport() {
+    setCopyStatus("Copying…")
+    try {
+      let diagnostics: unknown
+      try { diagnostics = await diagnoseTarget(label) }
+      catch { diagnostics = group ? await diagnoseTarget(group.key).catch(String) : null }
+      await copyText([
+        "Harbor adoption report", `Time: ${new Date().toISOString()}`,
+        `Group: ${group?.name}`, `Key: ${group?.key}`, `Label: ${label}`,
+        `Stage: ${progress?.stage ?? "preview"}`, `Elapsed: ${elapsed}s`,
+        `Options: ${JSON.stringify(options)}`, "", error ?? result?.join("\n") ?? "Preview",
+        "", "Diagnostics:", JSON.stringify(diagnostics, null, 2), "", "Reviewed plist:", xml,
+      ].join("\n"))
+      setCopyStatus("Copied")
+    } catch (e) { setCopyStatus(`Copy failed: ${String(e)}`) }
+  }
   useEffect(() => {
     if (busy || error || result) scroll.current?.scrollTo({ top: 0 })
   }, [busy, error, result])
@@ -53,6 +70,7 @@ export function AdoptSheet({
       setProgress(null)
       setApplyFailed(false)
       setError(null)
+      setCopyStatus("")
       setOptions({
         run_at_load: true,
         keep_alive: true,
@@ -64,6 +82,7 @@ export function AdoptSheet({
   useEffect(() => {
     if (!group || !label) return
     let cancelled = false
+    setCopyStatus("")
     setProgress(null)
     setApplyFailed(false)
     setXml("")
@@ -154,6 +173,8 @@ export function AdoptSheet({
         <div className="h-sheet-scroll" ref={scroll}>
           {error && (
             <div role="alert" className="h-error h-adopt-error">
+              <button className="h-button h-small" onClick={() => void copyReport()} disabled={copyStatus === "Copying…"}><Copy size={13} /> Copy report</button>
+              {copyStatus && <p role="status">{copyStatus}</p>}
               <strong>{failure?.[0]}</strong>
               {failure && failure.length > 1 && <>
                 <p>{failure[1]}</p>
@@ -164,6 +185,8 @@ export function AdoptSheet({
           )}
           {result && (
             <div className="h-notice">
+              <button className="h-button h-small" onClick={() => void copyReport()} disabled={copyStatus === "Copying…"}><Copy size={13} /> Copy report</button>
+              {copyStatus && <p role="status">{copyStatus}</p>}
               {result.map((line, i) => <p key={i}>{line}</p>)}
             </div>
           )}
@@ -242,6 +265,8 @@ export function AdoptSheet({
             ))}
           </div>
           <h3>Preview</h3>
+          <button className="h-button h-small" disabled={!xml} onClick={() => void copyText(xml).then(() => setCopyStatus("Plist copied")).catch((e) => setCopyStatus(`Copy failed: ${String(e)}`))}><Copy size={13} /> Copy plist</button>
+          {!error && !result && copyStatus && <p role="status" className="h-sub">{copyStatus}</p>}
           <p className="h-sub h-mono">~/Library/LaunchAgents/{label}.plist</p>
           <pre className="h-code">{xml || "Preparing preview…"}</pre>
         </div>
