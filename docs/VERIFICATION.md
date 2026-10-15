@@ -19,6 +19,9 @@ from automated/native checks; a real reboot was not requested or performed.
 
 ## Checks passed
 
+The checks below describe the initial implementation. Subsequent release checks are recorded
+in [HANDOFF.md](HANDOFF.md), including v1.5.1's native startup migration and CLI diagnostics.
+
 - 26 Rust tests; 46 frontend tests; rustfmt; clippy with all targets/features and warnings denied;
   oxlint; TypeScript/Vite production build; `git diff --check`.
 - Native WebKit/IPC: title, Services, job detail open/close, search by port, restart/login
@@ -47,7 +50,21 @@ DOM and CSS exported from the running native WebKit app**, with live data. They 
 desktop screenshots. macOS window capture returned “could not create image from window”.
 These renders were inspected and used to fix overlay cleanup, adoption-sheet positioning and
 popover footer clipping. Native title-bar, tray positioning and system interaction still need
-the owner's desktop check.
+the owner's desktop check, with the MacBook confirmation below providing additional evidence.
+
+## Owner confirmation — MacBook, 2026-10-15
+
+After the v1.5.1 delivery, the owner reported **“Nicely working!”** and supplied a native
+macOS screenshot in the development conversation. The **App Background Activity** notification
+reads **“harbor-app” can run in the background**, replacing the earlier **“launchd-ui”** name.
+
+This confirms the updated background executable identity on the owner's MacBook. The app's
+display name and startup plist label are **Harbor**; macOS's notification uses the executable
+name **harbor-app**. It should not be documented as displaying the exact text “Harbor” there.
+
+The owner accepted this result. This screenshot is separate from the mocked diagnostic UI
+fixtures and does not independently verify a login/reboot cycle, Harbor's service-health
+notifications, or repairs to the Teams/Java installation files.
 
 ## Reproduce
 
@@ -87,14 +104,16 @@ an automatic snapshot there. Fixture logs live under `~/Library/Logs/`.
 
 ## Owner acceptance remaining
 
-1. Inspect the native release app and tray in both appearances. Install the bundle by hand.
+1. Finish native app/tray checks in both appearances. Owner MacBook use and the updated
+   background notification are confirmed above; full appearance coverage remains open.
 2. Exercise a login toggle and archive on disposable items; verify macOS Automation permission
    handling, installed start-at-login and notifications. These commands are implemented, but
    real owner items were deliberately not changed for acceptance.
 3. Open the login inventory before saving a pre-restart snapshot (login comparison uses the
    cached inventory). At a convenient time, perform the real restart test and inspect the report.
-4. Public MIT source publication was approved on 2026-10-15: https://github.com/krittaprot/harbor.
-   A packaged binary release remains a separate step.
+
+Public MIT source and Apple Silicon DMG releases are published:
+https://github.com/krittaprot/harbor/releases. v1.5.1 includes the startup-name and scan-coverage fixes.
 
 Known v1 limitations: non-root visibility; extension inventory is read-only command output;
 system-daemon running state is Unknown rather than inferred from the user domain; a fixed-port

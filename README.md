@@ -68,6 +68,9 @@ Start-at-login and notifications default to on. Startup registration is applied 
 launching an installed bundle; builds inside `target/` do not register themselves. Closing
 the main window keeps Harbor in the menu bar; use Settings → Quit Harbor to exit.
 
+macOS may identify Harbor as **“harbor-app”** in its App Background Activity notification.
+That is Harbor's GUI executable; the app and startup entry are named **Harbor**.
+
 Configuration and snapshots live in `~/Library/Application Support/Harbor/`. Open at Login
 uses macOS Automation permission for System Events. Configuration is read again on each scan.
 

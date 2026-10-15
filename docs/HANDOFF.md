@@ -31,6 +31,14 @@ read-only; its signed app has Harbor display metadata, only `harbor-app`/`harbor
 and working CLI inventory. DMG size 8,099,412 bytes; SHA-256
 `37bb1a848171c6f62d7879c3facb341af31fbb78467ee606b2c1f9a4c75f6cac`.
 
+**Owner acceptance (2026-10-15):** After v1.5.1 delivery, the owner said “Nicely working!”
+and provided a native MacBook screenshot. The macOS App Background Activity notification
+now reads **“harbor-app” can run in the background**, not `launchd-ui`. This is the executable
+name; the app display name and LaunchAgent label are **Harbor**. Record the observed spelling
+accurately rather than claiming the notification says exactly “Harbor”. The owner accepted
+the result. Login/reboot recovery and Harbor-generated service alerts remain separate checks;
+see `docs/VERIFICATION.md`.
+
 ## First packaged release: v1.5.0 (2026-10-15)
 
 Version bumped consistently across package.json, Cargo.toml, Cargo.lock and tauri.conf.json.
