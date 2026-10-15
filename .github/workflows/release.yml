@@ -2,7 +2,7 @@ name: Release
 on:
   # Runs when a release PR opened by "Create Release PR" is merged
   pull_request:
-    branches: [main]
+    branches: [harbor/main]
     types: [closed]
 
 permissions: {}
@@ -138,10 +138,10 @@ jobs:
           version="${TAG#v}"
           assets=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets" --jq '.[].name')
           for name in \
-            "launchd-ui_aarch64.app.tar.gz" \
-            "launchd-ui_x64.app.tar.gz" \
-            "launchd-ui_${version}_aarch64.dmg" \
-            "launchd-ui_${version}_x64.dmg"; do
+            "Harbor_aarch64.app.tar.gz" \
+            "Harbor_x64.app.tar.gz" \
+            "Harbor_${version}_aarch64.dmg" \
+            "Harbor_${version}_x64.dmg"; do
             if ! grep -qxF "$name" <<< "$assets"; then
               echo "::error::Missing release asset: $name"
               exit 1

@@ -9,14 +9,16 @@ The verification document distinguishes completed checks from owner acceptance s
 
 ## Owner decisions received
 
-Eventual **public fork**, **start at login**, **notifications on**, pins **crystal-blood, hermes,
-3things, fasting**. Publication remains separate; nothing created or pushed to GitHub.
+**Public MIT fork**, **start at login**, **notifications on**, pins **crystal-blood, hermes,
+3things, fasting**. The owner approved publication on 2026-10-15:
+https://github.com/krittaprot/harbor. Further testing continues; no binary release is published.
 Startup/notification preferences are implemented. Startup registration is applied only from an
 installed bundle, not from builds inside `target/`. Nothing was installed into Applications.
 
 ## Implementation
 
-- Local branch `harbor/main`, upstream azu/launchd-ui v1.4.2 (`c98e9b5`); no origin or PR.
+- Development/default branch `harbor/main`, origin `krittaprot/harbor`, upstream
+  `azu/launchd-ui` v1.4.2 (`c98e9b5`). Published as a GitHub fork; no publication PR needed.
 - Persistent scanner retains CPU state, gathers launchd/process/port inventory, groups services,
   caches health checks and system state, emits snapshots, and services explicit rescan requests.
 - New backend modules: `config`, `grouping`, `health`, `system`, `harbor_commands`, `adopt`,
@@ -49,7 +51,7 @@ renders of native-exported DOM/CSS, not desktop captures. No real owner service 
 1. Open `src-tauri/target/release/bundle/macos/Harbor.app`; install by hand if satisfied.
    The normal debug bundle at `src-tauri/target/debug/bundle/macos/Harbor.app` was refreshed too.
 2. Complete owner acceptance in `docs/VERIFICATION.md`; preserve the original plan constraints.
-3. Publish the public fork only on a separate publication request.
+3. Continue testing on the public fork. A packaged binary release remains a separate step.
 
 Runtime data belongs in `~/Library/Application Support/Harbor/`; config, login-path cache and
 diagnostic DOM exports were written there. Owned adoption fixture logs are in `~/Library/Logs/`.

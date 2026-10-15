@@ -14,7 +14,7 @@ const productName: string = JSON.parse(read("src-tauri/tauri.conf.json")).produc
 const RELEASE_LABEL = "Type: Release"
 
 // Rust target in the release matrix -> arch suffix tauri-action uses for the
-// macOS assets (e.g. launchd-ui_x64.app.tar.gz, launchd-ui_1.4.1_x64.dmg).
+// macOS assets (e.g. Harbor_x64.app.tar.gz, Harbor_1.4.2_x64.dmg).
 const MAC_TARGETS = {
   "aarch64-apple-darwin": "aarch64",
   "x86_64-apple-darwin": "x64",
@@ -45,7 +45,7 @@ describe("create-release-pr workflow", () => {
 
 describe("release workflow", () => {
   test("runs only for merged release PRs from this repository", () => {
-    assert.match(releaseWorkflow, /pull_request:\s+branches: \[main\]\s+types: \[closed\]/)
+    assert.match(releaseWorkflow, /pull_request:\s+branches: \[harbor\/main\]\s+types: \[closed\]/)
     assert.doesNotMatch(releaseWorkflow, /^\s+tags:/m)
     for (const condition of [
       "github.event.pull_request.merged == true",
@@ -93,14 +93,10 @@ describe("release workflow", () => {
 })
 
 describe("README install instructions", () => {
-  for (const [target, arch] of Object.entries(MAC_TARGETS)) {
-    test(`downloads the ${target} archive from the latest release`, () => {
-      const url = `https://github.com/azu/launchd-ui/releases/latest/download/${productName}_${arch}.app.tar.gz`
-      assert.ok(readme.includes(`curl -fL "${url}" | tar xz -C /Applications`), url)
-    })
-  }
-
-  test("removes quarantine from the extracted app bundle", () => {
-    assert.ok(readme.includes(`xattr -cr /Applications/${productName}.app`))
+  test("builds Harbor from its own source instead of installing upstream binaries", () => {
+    assert.ok(readme.includes("git clone https://github.com/krittaprot/harbor.git"))
+    assert.ok(readme.includes("pnpm tauri build --bundles app"))
+    assert.ok(readme.includes(`open "src-tauri/target/release/bundle/macos/${productName}.app"`))
+    assert.doesNotMatch(readme, /azu\/launchd-ui\/releases\/latest\/download/)
   })
 })

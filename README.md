@@ -1,123 +1,84 @@
 # Harbor
 
-A user-level macOS service monitor for mini, based on [azu/launchd-ui](https://github.com/azu/launchd-ui) v1.4.2 (MIT). Copyright (c) azu; Harbor additions copyright (c) 2026 ode.
+A native macOS app for seeing what's running on your Mac: launchd services, listening
+ports, unmanaged processes, login apps, and restart readiness.
 
-See [the build plan](docs/PLAN.md) for scope and safety rules. Run commands from the project root. Development runs in the foreground only: `pnpm tauri dev`, then Ctrl-C when finished. No startup service is installed by development.
-
-Harbor now has its own Services, Open at Login, Restart Readiness and menu-bar interfaces,
-with live process trees, port ownership, health checks and an adoption workflow. The upstream
-job inspector remains available inside service details. System agents and daemons are read-only.
+Built with Tauri, React and Rust. Forked from [azu/launchd-ui](https://github.com/azu/launchd-ui)
+and released under the [MIT license](LICENSE).
 
 ![Harbor Services](docs/verification/harbor-light.png)
 
-## Build and open Harbor
+## Features
+
+- **Services:** grouped launchd jobs, process trees, port ownership, HTTP/TCP health checks,
+  and Cloudflare tunnel readiness.
+- **Unmanaged processes:** identify listeners without a launch agent, inspect a generated
+  plist, and adopt them after confirming the preview.
+- **Open at Login:** login apps, background helpers, leftover installations and unloaded agents.
+- **Restart Readiness:** a checklist, saved snapshots and post-boot comparisons.
+- **Menu bar:** pinned services, status indicators and notifications.
+- **Job inspector:** plist editing, scheduling, logs and user-agent controls retained from upstream.
+- System light/dark appearance and a native Harbor app icon.
+
+Harbor runs at user level. System agents and daemons are read-only. Process termination uses
+identity checks and SIGTERM; service and Mac restarts require confirmation.
+
+## Status
+
+Early development; testing is ongoing. See [verification](docs/VERIFICATION.md) for the checks
+performed and remaining acceptance work. The screenshots are renders of the running app's
+exported DOM/CSS with live data, rather than native desktop captures.
+
+Harbor was initially built for a particular Mac mini. Some defaults reflect that machine,
+including `/Volumes/ProVault` readiness and example service groups. Group names, health URLs,
+dependencies and menu-bar pins can be customized in `services.toml`.
+
+## Build and run
+
+Requires macOS, Xcode Command Line Tools, Rust 1.88 or newer, Node.js 22.18 or newer,
+and pnpm 10.28.2 (the version pinned in `package.json`).
 
 ```bash
+git clone https://github.com/krittaprot/harbor.git
+cd harbor
+pnpm install --frozen-lockfile
 pnpm tauri build --bundles app
 open "src-tauri/target/release/bundle/macos/Harbor.app"
 ```
 
-Install by copying that bundle to `~/Applications/` or `/Applications/`. The local build is
-ad-hoc signed, not notarized. Start-at-login is enabled by default after launching an installed
-bundle; builds inside `target/` do not register themselves at login. Closing the main window
-keeps Harbor in the menu bar; use Settings → Quit Harbor to exit.
+Copy the resulting bundle to `~/Applications/` or `/Applications/` to install it. Local builds
+are ad-hoc signed, not notarized. There is no Harbor binary release yet.
+
+Start-at-login and notifications default to on. Startup registration is applied only when
+launching an installed bundle; builds inside `target/` do not register themselves. Closing
+the main window keeps Harbor in the menu bar; use Settings → Quit Harbor to exit.
 
 Configuration and snapshots live in `~/Library/Application Support/Harbor/`. Open at Login
-uses macOS Automation permission for System Events. See [verification](docs/VERIFICATION.md)
-for measured results and remaining owner acceptance checks.
-
-## Upstream documentation
-
-# launchd-ui
-
-A GUI application for managing macOS launchd agents and daemons. Built with Tauri v2.
-
-Browse user LaunchAgents (`~/Library/LaunchAgents/`) and system agents/daemons. Start, stop, restart, view/edit plist files, and create new agents.
-
-![screenshot](screenshot.jpg)
-
-## Features
-
-- List User Agents (`~/Library/LaunchAgents/`), System Agents, and System Daemons
-- Search by label and filter by source (User / System / Daemon)
-- Start / Stop / Restart / Test Run (immediate execution) for User Agents
-- Create new agents, edit and delete existing ones
-- Schedule configuration (interval / calendar) with next run time preview
-- View stdout / stderr logs
-- Inspect plist configuration details
-- Reveal plist file in Finder
-
-System Agents and Daemons are read-only. Modification operations are limited to User Agents.
-
-## Install
-
-This app is not code-signed. Download and install via CLI:
-
-```bash
-# Download and extract (Apple Silicon)
-curl -fL "https://github.com/azu/launchd-ui/releases/latest/download/launchd-ui_aarch64.app.tar.gz" | tar xz -C /Applications
-# Remove quarantine attribute (required for unsigned apps)
-xattr -cr /Applications/launchd-ui.app
-```
-
-For Intel Macs, download the `x64` archive instead:
-
-```bash
-curl -fL "https://github.com/azu/launchd-ui/releases/latest/download/launchd-ui_x64.app.tar.gz" | tar xz -C /Applications
-xattr -cr /Applications/launchd-ui.app
-```
-
-DMG installers are also available on the [Releases](https://github.com/azu/launchd-ui/releases) page.
-
-## Tech Stack
-
-- Tauri v2 (Rust backend) + React + TypeScript + Vite
-- UI: Tailwind CSS v4 + shadcn/ui
-- Lint: oxlint (TypeScript), cargo clippy + rustfmt (Rust)
-- Test: vitest (Frontend), cargo test (Rust)
-- Package manager: pnpm
+uses macOS Automation permission for System Events. Configuration is read again on each scan.
 
 ## Development
 
-```bash
-# Install dependencies
-pnpm install
-
-# Dev mode (launches app with hot reload)
-pnpm tauri:dev
-
-# Frontend only
-pnpm dev
-
-# Production build (DMG)
-pnpm tauri:build
-```
-
-## Testing / Lint
+Run from the project root:
 
 ```bash
-pnpm test          # vitest (frontend)
-pnpm lint          # oxlint
-pnpm typecheck     # TypeScript type check
-pnpm test:release  # Release/version script tests (node:test)
-
-cargo test --manifest-path src-tauri/Cargo.toml          # Rust tests
-cargo fmt --manifest-path src-tauri/Cargo.toml --check   # Rust format check
-cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings  # Rust lint
+pnpm tauri dev                         # foreground; stop when finished
+pnpm test
+pnpm lint
+pnpm build
+pnpm version:check
+pnpm test:release
+cargo test --manifest-path src-tauri/Cargo.toml
+cargo fmt --manifest-path src-tauri/Cargo.toml --check
+cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
 ```
 
-## Release
+See the [build plan](docs/PLAN.md), [handoff](docs/HANDOFF.md) and
+[native verification instructions](docs/VERIFICATION.md) for architecture and testing details.
+Bug reports and contributions are welcome through [GitHub Issues](https://github.com/krittaprot/harbor/issues)
+and pull requests. The default development branch is `harbor/main`.
 
-Releases are made through a release PR:
+## License and attribution
 
-1. Run the [Create Release PR](https://github.com/azu/launchd-ui/actions/workflows/create-release-pr.yml) workflow and choose `patch`, `minor`, or `major`.
-   It bumps the version in `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock`, and opens a PR labeled `Type: Release`. The PR body is used as the release notes, so edit it as needed.
-2. Merge the PR. The Release workflow creates a draft release, builds the Apple Silicon (`aarch64`) and Intel (`x64`) apps, checks that all assets were uploaded, and then publishes the release and its `vX.Y.Z` tag.
-
-The four version files must always match. `pnpm version:check` verifies this, and `pnpm version:patch` / `version:minor` / `version:major` bump them together locally. Do not edit them by hand or with `npm version`.
-
-The Create Release PR workflow needs "Allow GitHub Actions to create and approve pull requests" enabled under Settings > Actions > General > Workflow permissions. Because the release PR is opened with `GITHUB_TOKEN`, its CI run waits for approval from someone with write access.
-
-## License
-
-MIT
+[MIT](LICENSE). Copyright (c) azu; Harbor additions copyright (c) 2026 ode.
+Harbor builds on azu's [launchd-ui](https://github.com/azu/launchd-ui) v1.4.2 and preserves
+its Git history and attribution.

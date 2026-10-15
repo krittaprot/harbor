@@ -93,7 +93,8 @@ an automatic snapshot there. Fixture logs live under `~/Library/Logs/`.
    real owner items were deliberately not changed for acceptance.
 3. Open the login inventory before saving a pre-restart snapshot (login comparison uses the
    cached inventory). At a convenient time, perform the real restart test and inspect the report.
-4. Publish the intended public fork only on a separate request.
+4. Public MIT source publication was approved on 2026-10-15: https://github.com/krittaprot/harbor.
+   A packaged binary release remains a separate step.
 
 Known v1 limitations: non-root visibility; extension inventory is read-only command output;
 system-daemon running state is Unknown rather than inferred from the user domain; a fixed-port
