@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Harbor — Services</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#F5F5F7}
+.app{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;color:#1D1D1F;font-size:13px;line-height:1.4;-webkit-font-smoothing:antialiased}
+.rounded{font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+.mono{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:11.5px}
+.tile{display:inline-flex;align-items:center;justify-content:center;flex:none;color:#fff;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.12)}
+.nav{display:flex;align-items:center;gap:10px;width:100%;padding:0 8px;min-height:34px;border:0;border-radius:8px;background:transparent;font:inherit;font-size:13.5px;color:#1D1D1F;text-align:left;cursor:pointer}
+.nav:hover{background:rgba(0,0,0,.05)}
+.nav.on{background:rgba(0,113,227,.14);font-weight:600}
+.nav .count{margin-left:auto;font-size:12px;color:#5E5E64;font-weight:500}
+.navlabel{font-size:11px;font-weight:600;color:#6E6E73;padding:16px 10px 6px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border:0;border-radius:999px;background:#E8E8ED;font:inherit;font-weight:500;color:#1D1D1F;cursor:pointer;white-space:nowrap;text-decoration:none;box-sizing:border-box}
+.btn:hover{background:#DCDCE1}
+.btn.primary{background:#0071E3;color:#fff}
+.btn.primary:hover{background:#0062C4}
+.btn.small{height:28px;padding:0 12px;font-size:12px}
+.btn.tinted{background:rgba(0,113,227,.12);color:#0058B0}
+.btn.tinted:hover{background:rgba(0,113,227,.2)}
+.ibtn{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:999px;background:transparent;color:#6E6E73;cursor:pointer;padding:0}
+.ibtn:hover{background:#EDEDF2;color:#0071E3}
+.seg{display:inline-flex;padding:2px;background:#E3E3E8;border-radius:9px;gap:2px;flex-wrap:wrap}
+.seg button{height:28px;padding:0 12px;border:0;border-radius:7px;background:transparent;font:inherit;color:#3A3A3F;cursor:pointer;white-space:nowrap}
+.seg button.on{background:#fff;color:#1D1D1F;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04)}
+.seg button .n{color:#6E6E73;font-weight:500;margin-left:5px}
+.card{background:#fff;border-radius:16px;box-shadow:0 0 0 .5px rgba(0,0,0,.07),0 2px 8px rgba(0,0,0,.04)}
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.ok{background:#E2F6E7;color:#17692F}
+.warn{background:#FFEFD6;color:#8F4B00}
+.bad{background:#FFE5E3;color:#B0201A}
+.info{background:#EBEBF0;color:#48484E}
+.blue{background:#E1EEFF;color:#0058B0}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.job{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:7px;font-size:11.5px;color:#3A3A3F;background:#F2F2F7;white-space:nowrap}
+.job .dot{width:6px;height:6px}
+.port{display:inline-flex;height:22px;align-items:center;gap:4px;padding:0 7px;border-radius:7px;background:#F2F2F7;color:#1D1D1F;white-space:nowrap}
+.port.pub{background:#E1EEFF;color:#0058B0}
+.grid{display:grid;grid-template-columns:minmax(250px,1.6fr) minmax(190px,1.3fr) minmax(180px,1.25fr) 124px 74px 100px;gap:16px;align-items:center;padding:11px 18px}
+.grid + .grid, .hr{border-top:1px solid #F0F0F3}
+.grid.head{font-size:11px;font-weight:600;color:#6E6E73;padding:12px 18px 8px}
+.ugrid{display:grid;grid-template-columns:minmax(270px,1.6fr) minmax(170px,1fr) 110px minmax(170px,1fr) auto;gap:16px;align-items:center;padding:13px 18px;border-top:1px solid #F5EBDD}
+.tgrid{display:grid;grid-template-columns:minmax(300px,1.8fr) minmax(170px,1.2fr) 70px 80px;gap:16px;align-items:center;padding:7px 18px 7px 66px;font-size:12px}
+.sub{font-size:12px;color:#6E6E73}
+.name{font-weight:600;font-size:13.5px;color:#1D1D1F}
+.namebtn{display:flex;align-items:center;gap:10px;border:0;background:transparent;padding:0;font:inherit;cursor:pointer;text-align:left;color:inherit;min-width:0}
+.wrap{display:flex;flex-wrap:wrap;gap:5px}
+.scroll{overflow-x:auto}
+.inner{min-width:1000px}
+.field{height:32px;border:0;border-radius:9px;padding:0 10px;font:inherit;background:#E8E8ED;width:100%;box-sizing:border-box;color:#1D1D1F}
+.field.light{background:#fff;box-shadow:inset 0 0 0 1px #DADADF}
+.search{position:relative;flex:1 1 240px;max-width:380px}
+.search input{padding-left:32px}
+.search svg{position:absolute;left:10px;top:9px}
+.switch{width:40px;height:24px;border-radius:999px;border:0;background:#E3E3E8;position:relative;cursor:pointer;padding:0;flex:none;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.06)}
+.switch span{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25),0 0 0 .5px rgba(0,0,0,.04)}
+.switch.on{background:#2FB24F}
+.switch.on span{left:18px}
+.code{margin:0;background:#1E1E24;color:#E7E7EE;border-radius:12px;padding:14px 16px;font:11.5px/1.65 "SF Mono",ui-monospace,Menlo,monospace;white-space:pre;overflow:auto}
+.kv{display:grid;grid-template-columns:110px 1fr;font-size:12.5px}
+.kv dt,.kv dd{padding:9px 14px;border-top:1px solid #F0F0F3;margin:0}
+.kv dt{color:#6E6E73}
+.kv dd{min-width:0;overflow-wrap:anywhere}
+.kv dt:first-of-type,.kv dd:first-of-type{border-top:0}
+.chev{transition:transform .15s}
+.chev.open{transform:rotate(90deg)}
+.stat{padding:16px;display:flex;align-items:center;gap:14px}
+.big{font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+a{color:#0066CC}a:hover{color:#004C99}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid rgba(0,113,227,.45);outline-offset:1px}
+.app{--bg:#F5F5F7;--card:#FFFFFF;--sunken:#F9F9FB;--sep:#F0F0F3;--edge:#DEDEE3;--sidebar:linear-gradient(180deg,#EEEEF3 0%,#E9E9EF 100%);--glass:rgba(255,255,255,.7);--fill:#EDEDF2;--muted:#6E6E73;--text2:#3A3A3F;--warn-text:#5A3A10;--warn-wash:linear-gradient(180deg,#FFF8EC 0px,#FFFFFF 92px);--warn-wash-h:linear-gradient(90deg,#FFF6E8,#FFFFFF);--hero:linear-gradient(135deg,#F2FBF4 0%,#FFFFFF 45%,#FFF7EC 100%)}
+.app.dark{--bg:#161618;--card:#232326;--sunken:#1C1C1F;--sep:rgba(255,255,255,.07);--edge:rgba(0,0,0,.5);--sidebar:linear-gradient(180deg,#2B2B30 0%,#252529 100%);--glass:rgba(255,255,255,.06);--fill:rgba(255,255,255,.1);--muted:#9A9AA1;--text2:#D1D1D6;--warn-text:#FFC56B;--warn-wash:linear-gradient(180deg,#33281A 0px,#232326 92px);--warn-wash-h:linear-gradient(90deg,#33281A,#232326);--hero:linear-gradient(135deg,#1C2E22 0%,#232326 45%,#32281B 100%);color:#F5F5F7;color-scheme:dark}
+.app.dark .name,.app.dark h1,.app.dark h2{color:#F5F5F7}
+.app.dark .sub,.app.dark .grid.head,.app.dark .navlabel,.app.dark .nav .count,.app.dark .kv dt,.app.dark .seg button .n{color:#9A9AA1}
+.app.dark .nav{color:#E5E5EA}
+.app.dark .nav:hover{background:rgba(255,255,255,.06)}
+.app.dark .nav.on{background:rgba(10,132,255,.28)}
+.app.dark .card{background:#232326;box-shadow:0 0 0 .5px rgba(255,255,255,.08),0 2px 10px rgba(0,0,0,.35)}
+.app.dark .btn{background:rgba(255,255,255,.1);color:#F5F5F7}
+.app.dark .btn:hover{background:rgba(255,255,255,.16)}
+.app.dark .btn.primary{background:#0A84FF;color:#fff}
+.app.dark .btn.primary:hover{background:#2491FF}
+.app.dark .btn.tinted{background:rgba(10,132,255,.2);color:#7CBBFF}
+.app.dark .ibtn{color:#A1A1A8}
+.app.dark .ibtn:hover{background:rgba(255,255,255,.08);color:#4DA3FF}
+.app.dark .seg{background:rgba(255,255,255,.08)}
+.app.dark .seg button{color:#D1D1D6}
+.app.dark .seg button.on{background:#5A5A60;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.app.dark .ok{background:rgba(52,199,89,.17);color:#63D884}
+.app.dark .warn{background:rgba(255,159,10,.17);color:#FFB547}
+.app.dark .bad{background:rgba(255,69,58,.18);color:#FF8A80}
+.app.dark .info{background:rgba(255,255,255,.09);color:#C7C7CC}
+.app.dark .blue{background:rgba(10,132,255,.2);color:#7CBBFF}
+.app.dark .job,.app.dark .port{background:rgba(255,255,255,.07);color:#E5E5EA}
+.app.dark .port.pub{background:rgba(10,132,255,.2);color:#7CBBFF}
+.app.dark .ugrid{border-top-color:rgba(255,159,10,.14)}
+.app.dark .field{background:rgba(255,255,255,.08);color:#F5F5F7}
+.app.dark .field.light{background:#1C1C1F;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.app.dark .switch{background:rgba(255,255,255,.16)}
+.app.dark .switch.on{background:#30D158}
+.app.dark .code{background:#111113;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.08)}
+.app.dark .tile{box-shadow:inset 0 0 0 .5px rgba(255,255,255,.18),0 1px 2px rgba(0,0,0,.4)}
+.app.dark a{color:#4DA3FF}
+</style>
+</helmet>
+<div class="app {{themeCls}}" style="position: relative; min-height: 900px; display: flex; flex-wrap: wrap; background: var(--bg)">
+
+<nav aria-label="Sections" style="flex: 1 1 230px; max-width: 100%; box-sizing: border-box; padding: 14px 12px 18px; display: flex; flex-direction: column; gap: 2px; background: var(--sidebar); border-right: 1px solid var(--edge)">
+<div style="display: flex; gap: 8px; padding: 2px 8px 16px" aria-hidden="true">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57; box-shadow: inset 0 0 0 .5px rgba(0,0,0,.15)"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E; box-shadow: inset 0 0 0 .5px rgba(0,0,0,.15)"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840; box-shadow: inset 0 0 0 .5px rgba(0,0,0,.15)"></span>
+</div>
+<div style="display: flex; align-items: center; gap: 11px; padding: 0 8px 8px">
+<div class="tile" style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(180deg, #FFFFFF 0%, #ECEDF1 100%); box-shadow: inset 0 0 0 .5px rgba(0,0,0,.14), 0 1px 3px rgba(0,0,0,.18)" aria-hidden="true">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14213A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"></circle><path d="M12 7.2V21M8 11h8M4.5 13.5a7.5 7.5 0 0 0 15 0"></path></svg>
+</div>
+<div style="display: flex; flex-direction: column">
+<span style="font-weight: 700; font-size: 15px; letter-spacing: -.01em">Harbor</span>
+<span class="sub">mini · up 3 days</span>
+</div>
+</div>
+
+<div class="navlabel">Manage</div>
+<button class="nav {{navServices}}" onClick="{{goServices}}">
+<span class="tile" style="width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(180deg, #4BA3FF, #0A6CFF)" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v6H4zM4 14h16v6H4zM8 7h.01M8 17h.01"></path></svg></span>
+Services<span class="count">18</span></button>
+<button class="nav {{navLogin}}" onClick="{{goLogin}}">
+<span class="tile" style="width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(180deg, #CF7DF2, #A445D8)" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM17.5 14v7M14 17.5h7"></path></svg></span>
+Open at Login<span class="count">5</span></button>
+<button class="nav {{navRestart}}" onClick="{{goRestart}}">
+<span class="tile" style="width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(180deg, #FFB340, #FF8A00)" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v8M6.3 6.8a8 8 0 1 0 11.4 0"></path></svg></span>
+Restart Readiness<span class="count"><span class="pill warn" style="height: 18px; padding: 0 7px; font-size: 11px">2</span></span></button>
+
+<div class="navlabel">Smart filters</div>
+<button class="nav" onClick="{{goUnmanaged}}">
+<span class="tile" style="width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(180deg, #FFD84D, #F5B800)" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v6M12 17h.01"></path></svg></span>
+No Launch Agent<span class="count">6</span></button>
+<button class="nav" onClick="{{goAttention}}">
+<span class="tile" style="width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(180deg, #FF6F61, #E8382B)" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9.5 17h-19zM12 10v4M12 17h.01"></path></svg></span>
+Needs Attention<span class="count">2</span></button>
+<button class="nav" onClick="{{goLogin}}">
+<span class="tile" style="width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(180deg, #9A9AA0, #6E6E75)" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18"></path></svg></span>
+Not Loaded<span class="count">7</span></button>
+<button class="nav">
+<span class="tile" style="width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(180deg, #5E5E66, #3A3A40)" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.9-3-.8C7 7.4 5.6 8.3 4.8 9.7c-1.7 2.9-.4 7.2 1.2 9.5.8 1.1 1.7 2.4 2.9 2.4 1.2 0 1.6-.8 3-.8s1.8.8 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.7 0 0-2.6-1-2.6-3.9zM14.2 5.8c.6-.8 1.1-1.9 1-2.9-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.8 1 .1 2.1-.5 2.7-1.3z"></path></svg></span>
+Apple &amp; System<span class="count">hidden</span></button>
+
+<div style="margin-top: auto; padding-top: 18px">
+<div style="background: var(--glass); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 9px; font-size: 12px; color: var(--text2); box-shadow: 0 0 0 .5px rgba(0,0,0,.06)">
+<div style="display: flex; align-items: center; gap: 8px"><span class="dot" style="color: #34C759; width: 8px; height: 8px" aria-hidden="true"></span>ProVault mounted</div>
+<div style="display: flex; align-items: center; gap: 8px"><span class="dot" style="color: #34C759; width: 8px; height: 8px" aria-hidden="true"></span>Tailscale connected</div>
+<div style="display: flex; align-items: center; gap: 8px"><span class="dot" style="color: #FF9500; width: 8px; height: 8px" aria-hidden="true"></span>FileVault on · unlock after restart</div>
+<div class="sub" style="padding-top: 2px">Scanned 4 s ago</div>
+</div>
+</div>
+</nav>
+
+<main style="flex: 999 1 640px; min-width: 0; box-sizing: border-box; background: var(--bg); display: flex; flex-direction: column">
+
+<sc-if value="{{isServices}}" hint-placeholder-val="{{ true }}">
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 22px 32px 6px">
+<div style="display: flex; flex-direction: column; gap: 2px; margin-right: auto">
+<h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.02em">Services</h1>
+<span class="sub" style="font-size: 13px">18 services · 34 launchd jobs · 41 listening ports</span>
+</div>
+<button class="btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"></path></svg>Rescan</button>
+<button class="btn primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>New Service</button>
+</header>
+
+<div style="padding: 16px 32px 44px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px">
+<div class="card stat">
+<svg width="52" height="52" viewBox="0 0 52 52" role="img" aria-label="16 of 18 healthy" style="flex: none"><circle cx="26" cy="26" r="21" fill="none" stroke="rgba(52,199,89,.2)" stroke-width="7"></circle><circle cx="26" cy="26" r="21" fill="none" stroke="#34C759" stroke-width="7" stroke-linecap="round" stroke-dasharray="117.3 132" transform="rotate(-90 26 26)"></circle></svg>
+<div style="display: flex; flex-direction: column"><span class="big rounded">16<span style="font-size: 16px; color: var(--muted); font-weight: 600">/18</span></span><span class="sub">Healthy services</span></div>
+</div>
+<div class="card stat">
+<span class="tile" style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(180deg, #FFD84D, #F5B800)" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v6M12 17h.01"></path></svg></span>
+<div style="display: flex; flex-direction: column"><span class="big rounded">6</span><span class="sub">No launch agent — won’t survive a restart</span></div>
+</div>
+<div class="card stat">
+<span class="tile" style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(180deg, #FF6F61, #E8382B)" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9.5 17h-19zM12 10v4M12 17h.01"></path></svg></span>
+<div style="display: flex; flex-direction: column"><span class="big rounded">2</span><span class="sub">Need attention · 1 failed, 1 restarted</span></div>
+</div>
+<div class="card stat">
+<span class="tile" style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(180deg, #9A9AA0, #6E6E75)" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18"></path></svg></span>
+<div style="display: flex; flex-direction: column"><span class="big rounded">7</span><span class="sub">Agents not loaded</span></div>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+<label class="search"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search services</span>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6E6E73" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+<input class="field" type="search" placeholder="Search name, port, label or path" value="{{q}}" onChange="{{onSearch}}">
+</label>
+<div class="seg" role="group" aria-label="Filter">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="5">
+<button class="{{f.cls}}" onClick="{{f.pick}}" aria-pressed="{{f.pressed}}">{{f.label}}<span class="n">{{f.n}}</span></button>
+</sc-for>
+</div>
+</div>
+
+<sc-if value="{{showUnmanaged}}" hint-placeholder-val="{{ true }}">
+<section class="card" style="overflow: hidden; background: var(--warn-wash)" aria-labelledby="unm">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 16px 18px 12px">
+<span class="tile" style="width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(180deg, #FFB340, #FF8A00)" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v6M12 17h.01"></path></svg></span>
+<div style="display: flex; flex-direction: column; margin-right: auto">
+<h2 id="unm" style="margin: 0; font-size: 15px; font-weight: 700">Running without a launch agent</h2>
+<span class="sub">Listening on ports right now, but nothing will start them again after a restart.</span>
+</div>
+<button class="btn small">Ignore expected</button>
+</div>
+<div class="scroll"><div class="inner">
+<sc-for list="{{unmanaged}}" as="u" hint-placeholder-count="3">
+<div class="ugrid">
+<div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+<span class="tile" style="width: 32px; height: 32px; border-radius: 9px; background: {{u.tile}}" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="{{u.icon}}"></path></svg></span>
+<div style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap"><span class="name">{{u.name}}</span><span class="pill {{u.tone}}">{{u.badge}}</span></div>
+<span class="sub mono" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{u.cmd}}</span>
+</div>
+</div>
+<div class="wrap"><sc-for list="{{u.ports}}" as="p" hint-placeholder-count="2"><span class="port mono">{{p}}</span></sc-for></div>
+<div style="display: flex; flex-direction: column"><span>{{u.age}}</span><span class="sub">{{u.copies}}</span></div>
+<span class="sub">{{u.why}}</span>
+<div style="display: flex; gap: 6px; justify-content: flex-end">
+<button class="btn small {{u.primaryCls}}" onClick="{{u.primaryAct}}">{{u.primary}}</button>
+<button class="btn small">{{u.secondary}}</button>
+</div>
+</div>
+</sc-for>
+</div></div>
+</section>
+</sc-if>
+
+<sc-if value="{{showManaged}}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+<section style="display: flex; flex-direction: column; gap: 8px" aria-label="{{g.title}}">
+<div style="display: flex; align-items: center; gap: 8px; padding: 4px 4px 0">
+<span class="dot" style="color: {{g.color}}; width: 9px; height: 9px" aria-hidden="true"></span>
+<h2 style="margin: 0; font-size: 15px; font-weight: 700">{{g.title}}</h2>
+<span class="sub">{{g.n}}</span>
+</div>
+<div class="card" style="overflow: hidden">
+<div class="scroll"><div class="inner">
+<div class="grid head"><span>Service</span><span>Launchd jobs</span><span>Ports</span><span>Health</span><span>Uptime</span><span style="text-align: right">Actions</span></div>
+<sc-for list="{{g.rows}}" as="r" hint-placeholder-count="4">
+<div class="grid hr" style="{{r.rowStyle}}">
+<div style="display: flex; align-items: center; gap: 4px; min-width: 0">
+<button class="namebtn" onClick="{{r.toggle}}" aria-expanded="{{r.expanded}}">
+<svg class="chev {{r.chev}}" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="{{r.chevColor}}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+<span class="tile" style="width: 32px; height: 32px; border-radius: 9px; background: {{r.tile}}" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="{{r.icon}}"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 1px; min-width: 0">
+<span style="display: flex; align-items: center; gap: 7px"><span class="name">{{r.name}}</span><sc-if value="{{r.flag}}" hint-placeholder-val="{{ false }}"><span class="pill {{r.tone}}">{{r.flag}}</span></sc-if></span>
+<span class="sub" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px">{{r.desc}}</span>
+</span>
+</button>
+</div>
+<div class="wrap"><sc-for list="{{r.jobs}}" as="j" hint-placeholder-count="2"><span class="job"><span class="dot" style="color: {{j.c}}"></span>{{j.n}}</span></sc-for></div>
+<div class="wrap"><sc-for list="{{r.ports}}" as="p" hint-placeholder-count="2"><span class="port mono {{p.cls}}">{{p.t}}</span></sc-for></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><span class="pill {{r.hTone}}" style="align-self: flex-start"><span class="dot"></span><span class="mono" style="font-size: 11px">{{r.health}}</span></span><span class="sub" style="font-size: 11px">{{r.hNote}}</span></div>
+<span class="rounded" style="font-weight: 600; color: var(--text2)">{{r.up}}</span>
+<div style="display: flex; gap: 0; justify-content: flex-end">
+<button class="ibtn" aria-label="Open in browser"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"></path></svg></button>
+<button class="ibtn" aria-label="Restart service"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"></path></svg></button>
+<button class="ibtn" aria-label="More actions"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg></button>
+</div>
+</div>
+<sc-if value="{{r.expanded}}" hint-placeholder-val="{{ false }}">
+<div style="background: var(--sunken); border-top: 1px solid var(--sep); padding: 8px 0 14px">
+<div class="tgrid" style="font-size: 11px; font-weight: 600; color: var(--muted)"><span>Job → process</span><span>Ports</span><span>PID</span><span>Memory</span></div>
+<sc-for list="{{r.tree}}" as="t" hint-placeholder-count="3">
+<div class="tgrid">
+<div style="display: flex; align-items: center; gap: 8px; min-width: 0; padding-left: {{t.indent}}">
+<span class="dot" style="color: {{t.c}}" aria-hidden="true"></span>
+<span class="mono" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: {{t.weight}}">{{t.label}}</span>
+</div>
+<div class="wrap"><sc-for list="{{t.ports}}" as="p" hint-placeholder-count="1"><span class="port mono" style="background: var(--card); box-shadow: 0 0 0 .5px rgba(0,0,0,.1)">{{p}}</span></sc-for></div>
+<span class="mono sub">{{t.pid}}</span>
+<span class="mono sub">{{t.mem}}</span>
+</div>
+</sc-for>
+<sc-if value="{{r.dep}}" hint-placeholder-val="{{ false }}">
+<div style="margin: 10px 18px 0 66px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px">
+<span class="pill ok"><span class="dot"></span>Needs /Volumes/ProVault · mounted</span>
+<span class="pill info">Log rotation ran · exit 0</span>
+</div>
+</sc-if>
+</div>
+</sc-if>
+</sc-for>
+</div></div>
+</div>
+</section>
+</sc-for>
+</sc-if>
+
+<sc-if value="{{showApps}}" hint-placeholder-val="{{ true }}">
+<section style="display: flex; flex-direction: column; gap: 8px" aria-labelledby="appm">
+<div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 4px 4px 0">
+<h2 id="appm" style="margin: 0; font-size: 15px; font-weight: 700">Started by apps</h2>
+<span class="sub">They manage themselves — listed so every open port has an owner.</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px">
+<sc-for list="{{apps}}" as="a" hint-placeholder-count="5">
+<div class="card" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px">
+<span class="tile" style="width: 36px; height: 36px; border-radius: 10px; background: {{a.tile}}; font-weight: 700; font-size: 15px" aria-hidden="true">{{a.mono}}</span>
+<div style="display: flex; flex-direction: column; gap: 5px; min-width: 0">
+<div style="display: flex; align-items: baseline; gap: 6px"><span class="name" style="font-size: 13px">{{a.name}}</span><span class="sub" style="font-size: 11px">{{a.via}}</span></div>
+<div class="wrap"><sc-for list="{{a.ports}}" as="p" hint-placeholder-count="2"><span class="port mono">{{p}}</span></sc-for></div>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-if>
+
+<div class="sub" style="text-align: center; padding-top: 4px">Apple, Google and other system jobs are hidden. <a href="#">Show 556 system jobs</a></div>
+</div>
+</sc-if>
+
+<sc-if value="{{isLogin}}" hint-placeholder-val="{{ false }}">
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 22px 32px 6px">
+<div style="display: flex; flex-direction: column; gap: 2px; margin-right: auto">
+<h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.02em">Open at Login</h1>
+<span class="sub" style="font-size: 13px">Everything that starts when you log in — apps, background helpers and your own agents.</span>
+</div>
+<button class="btn primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add App…</button>
+</header>
+<div style="padding: 16px 32px 44px; display: flex; flex-direction: column; gap: 22px">
+<div class="card" style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 14px 18px; background: var(--warn-wash-h)">
+<span class="tile" style="width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(180deg, #FFB340, #FF8A00)" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11h14v10H5zM8 11V8a4 4 0 0 1 8 0v3"></path></svg></span>
+<span style="flex: 1 1 300px; color: var(--warn-text)">FileVault is on with no auto-login, so none of this runs until someone unlocks mini at its keyboard.</span>
+</div>
+
+<section style="display: flex; flex-direction: column; gap: 8px" aria-labelledby="la">
+<div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 0 4px"><h2 id="la" style="margin: 0; font-size: 15px; font-weight: 700">Apps that open at login</h2><span class="sub">Same list as System Settings › General › Login Items</span></div>
+<div class="card" style="overflow: hidden">
+<sc-for list="{{loginApps}}" as="a" hint-placeholder-count="5">
+<div class="hr" style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 12px 18px">
+<span class="tile" style="width: 38px; height: 38px; border-radius: 10px; background: {{a.tile}}; font-weight: 700; font-size: 16px" aria-hidden="true">{{a.mono}}</span>
+<div style="display: flex; flex-direction: column; flex: 1 1 220px; min-width: 0"><span class="name">{{a.name}}</span><span class="sub">{{a.desc}}</span></div>
+<div class="wrap" style="flex: 0 1 220px"><sc-for list="{{a.ports}}" as="p" hint-placeholder-count="1"><span class="port mono">{{p}}</span></sc-for></div>
+<span class="pill ok" style="flex: none"><span class="dot"></span>Running</span>
+<button class="switch {{a.sw}}" onClick="{{a.toggle}}" aria-pressed="{{a.on}}" aria-label="Open {{a.name}} at login"><span></span></button>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 8px" aria-labelledby="bg">
+<div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 0 4px"><h2 id="bg" style="margin: 0; font-size: 15px; font-weight: 700">Allowed in the background</h2><span class="sub">Helpers that apps installed as agents or daemons</span></div>
+<div class="card" style="overflow: hidden">
+<sc-for list="{{bgItems}}" as="b" hint-placeholder-count="4">
+<div class="hr" style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 12px 18px">
+<span class="tile" style="width: 38px; height: 38px; border-radius: 10px; background: {{b.tile}}" aria-hidden="true"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="{{b.icon}}"></path></svg></span>
+<div style="display: flex; flex-direction: column; flex: 1 1 240px; min-width: 0"><span class="name">{{b.name}}</span><span class="sub mono" style="font-size: 11px">{{b.labels}}</span></div>
+<span class="sub" style="flex: 1 1 240px">{{b.note}}</span>
+<span class="pill {{b.tone}}" style="flex: none"><span class="dot"></span>{{b.status}}</span>
+<button class="btn small {{b.btn}}" style="flex: none">{{b.action}}</button>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 8px" aria-labelledby="nl">
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 4px"><h2 id="nl" style="margin: 0; font-size: 15px; font-weight: 700">Your agents that won’t start</h2><span class="sub">Plists in ~/Library/LaunchAgents that aren’t loaded</span><button class="btn small tinted" style="margin-left: auto">Archive the 4 old ones</button></div>
+<div class="card" style="overflow: hidden">
+<sc-for list="{{offAgents}}" as="o" hint-placeholder-count="7">
+<div class="hr" style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 11px 18px">
+<span class="dot" style="color: {{o.c}}; width: 8px; height: 8px" aria-hidden="true"></span>
+<span class="mono" style="flex: 1 1 280px; font-size: 12px">{{o.label}}</span>
+<span class="sub" style="flex: 1 1 280px">{{o.note}}</span>
+<button class="btn small" style="flex: none">{{o.action}}</button>
+</div>
+</sc-for>
+</div>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{isRestart}}" hint-placeholder-val="{{ false }}">
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 22px 32px 6px">
+<div style="display: flex; flex-direction: column; gap: 2px; margin-right: auto">
+<h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.02em">Restart Readiness</h1>
+<span class="sub" style="font-size: 13px">What comes back by itself, what won’t, and what needs you at the keyboard.</span>
+</div>
+<button class="btn">Save Snapshot</button>
+<button class="btn primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v8M6.3 6.8a8 8 0 1 0 11.4 0"></path></svg>Restart mini…</button>
+</header>
+<div style="padding: 16px 32px 44px; display: flex; flex-direction: column; gap: 22px">
+
+<section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 20px; background: var(--hero)">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 18px">
+<span class="tile" style="width: 56px; height: 56px; border-radius: 15px; background: linear-gradient(180deg, #5EDB7D, #28B04A)" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6zM8.5 12l2.5 2.5 4.5-5"></path></svg></span>
+<div style="display: flex; flex-direction: column; gap: 4px; flex: 1 1 380px">
+<span style="font-size: 21px; font-weight: 700; letter-spacing: -.01em">Safe to restart — 2 things to sort out first</span>
+<span class="sub" style="font-size: 13px">39 things come back on their own once you unlock. 6 processes won’t, and the restore check failed last time.</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; height: 12px; border-radius: 999px; overflow: hidden; gap: 3px" role="img" aria-label="39 come back, 6 won’t, 1 needs you">
+<span style="flex: 39; background: linear-gradient(90deg, #5EDB7D, #34C759)"></span>
+<span style="flex: 6; background: #FF9F0A"></span>
+<span style="flex: 1.4; background: #8E8E93"></span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 22px; font-size: 13px">
+<span style="display: flex; align-items: center; gap: 7px"><span class="dot" style="color: #34C759; width: 9px; height: 9px"></span><b class="rounded">39</b> come back · 34 jobs + 5 login apps</span>
+<span style="display: flex; align-items: center; gap: 7px"><span class="dot" style="color: #FF9F0A; width: 9px; height: 9px"></span><b class="rounded">6</b> won’t come back</span>
+<span style="display: flex; align-items: center; gap: 7px"><span class="dot" style="color: #8E8E93; width: 9px; height: 9px"></span><b class="rounded">1</b> needs you · FileVault unlock</span>
+</div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 8px" aria-labelledby="pre">
+<h2 id="pre" style="margin: 0; padding: 0 4px; font-size: 15px; font-weight: 700">Before you restart</h2>
+<div class="card" style="overflow: hidden">
+<sc-for list="{{checks}}" as="c" hint-placeholder-count="6">
+<div class="hr" style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 13px 18px">
+<span class="tile" style="width: 30px; height: 30px; border-radius: 50%; background: {{c.tile}}" role="img" aria-label="{{c.status}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{c.icon}}"></path></svg></span>
+<div style="display: flex; flex-direction: column; flex: 1 1 320px; min-width: 0"><span class="name">{{c.title}}</span><span class="sub">{{c.detail}}</span></div>
+<sc-if value="{{c.action}}" hint-placeholder-val="{{ false }}"><button class="btn small tinted" style="flex: none" onClick="{{c.act}}">{{c.action}}</button></sc-if>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 8px" aria-labelledby="last">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; padding: 0 4px"><h2 id="last" style="margin: 0; font-size: 15px; font-weight: 700">Last restart</h2><span class="sub">Mon Oct 12 · compared with the snapshot saved before it</span></div>
+<div class="card" style="overflow: hidden">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))">
+<sc-for list="{{timeline}}" as="t" hint-placeholder-count="4">
+<div style="padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; border-right: 1px solid var(--sep)">
+<div style="display: flex; align-items: center; gap: 8px"><span class="dot" style="color: {{t.c}}; width: 9px; height: 9px"></span><span class="rounded" style="font-weight: 700; font-size: 15px">{{t.time}}</span></div>
+<span class="name" style="font-size: 13px">{{t.title}}</span>
+<span class="sub">{{t.detail}}</span>
+</div>
+</sc-for>
+</div>
+<div class="hr" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 18px; background: var(--sunken)">
+<span class="pill ok"><span class="dot"></span>34 of 34 jobs came back</span>
+<span class="pill ok"><span class="dot"></span>5 of 5 login apps opened</span>
+<span class="pill blue"><span class="dot"></span>Nothing missing</span>
+<span class="sub" style="margin-left: auto">After the next restart, Harbor opens to this report.</span>
+</div>
+</div>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{adoptOpen}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; background: rgba(20,20,30,.22)" onClick="{{closeAdopt}}" aria-hidden="true"></div>
+<aside role="dialog" aria-modal="true" aria-labelledby="adoptT" style="position: absolute; top: 12px; right: 12px; bottom: 12px; width: 560px; max-width: calc(100% - 24px); background: var(--bg); border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.22), 0 0 0 .5px rgba(0,0,0,.1); display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 14px; padding: 20px 22px 16px; background: var(--card); border-bottom: 1px solid var(--sep)">
+<span class="tile" style="width: 48px; height: 48px; border-radius: 13px; background: linear-gradient(180deg, #FF6F91, #F0306A)" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM8 10l3 2-3 2M13 15h3"></path></svg></span>
+<div style="display: flex; flex-direction: column; gap: 4px; margin-right: auto; min-width: 0">
+<span class="sub" style="font-weight: 600; color: #F0306A">Adopt as launch agent</span>
+<h2 id="adoptT" style="margin: 0; font-size: 19px; font-weight: 700">figma-console-mcp</h2>
+</div>
+<button class="ibtn" style="background: var(--fill)" onClick="{{closeAdopt}}" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+
+<div style="flex: 1; overflow: auto; padding: 18px 22px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 700; padding: 0 4px">What’s running now</span>
+<div class="card" style="overflow: hidden">
+<div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--sep)"><span class="pill warn">Orphaned · 4 copies</span><span class="port mono">:9225</span><span class="port mono">:9230</span><span class="port mono">:9231</span><span class="port mono">:9232</span></div>
+<dl class="kv" style="margin: 0">
+<dt>Command</dt><dd class="mono">~/.local/bin/node …/figma-console-mcp/dist/local.js</dd>
+<dt>Folder</dt><dd class="mono">~/Developer/research</dd>
+<dt>Parent</dt><dd>launchd — the session that started it has exited</dd>
+<dt>Running</dt><dd>11 h 45 m · 0.0% CPU · 44 MB across 4 copies</dd>
+</dl>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 700; padding: 0 4px">Set it up</span>
+<div class="card" style="overflow: hidden">
+<label style="display: flex; align-items: center; gap: 12px; padding: 10px 14px"><span style="width: 70px; flex: none" class="sub">Label</span><input class="field light mono" value="com.ode.figma-console-mcp"></label>
+<label class="hr" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px"><span style="width: 70px; flex: none" class="sub">Group</span><input class="field light" value="AI &amp; agents"></label>
+<sc-for list="{{adoptOpts}}" as="o" hint-placeholder-count="4">
+<div class="hr" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px">
+<span class="tile" style="width: 28px; height: 28px; border-radius: 8px; background: {{o.tile}}" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{o.icon}}"></path></svg></span>
+<div style="display: flex; flex-direction: column; flex: 1; min-width: 0"><span style="font-weight: 600">{{o.title}}</span><span class="sub">{{o.detail}}</span></div>
+<button class="switch {{o.sw}}" onClick="{{o.toggle}}" aria-pressed="{{o.on}}" aria-label="{{o.title}}"><span></span></button>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; padding: 0 4px"><span style="font-size: 13px; font-weight: 700">Preview</span><span class="sub mono" style="margin-left: auto; font-size: 11px">~/Library/LaunchAgents/com.ode.figma-console-mcp.plist</span></div>
+<pre class="code">{{plist}}</pre>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 22px; background: var(--card); border-top: 1px solid var(--sep)">
+<span class="sub" style="margin-right: auto; flex: 1 1 220px">Writes the plist, runs <span class="mono">launchctl bootstrap gui/501</span>, then stops the 4 copies once the new one answers.</span>
+<button class="btn" onClick="{{closeAdopt}}">Cancel</button>
+<button class="btn primary">Adopt &amp; Load</button>
+</div>
+</aside>
+</sc-if>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"view":{"editor":"enum","options":["services","login","restart"],"default":"services"},"adopt":{"editor":"boolean","default":false},"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const view = s.view ?? this.props.view ?? 'services';
+    const adoptOpen = s.adopt ?? this.props.adopt ?? false;
+    const filter = s.filter ?? 'all';
+    const q = (s.q ?? '').toLowerCase();
+    const expanded = s.expanded ?? 'crystal-blood';
+    const set = (o) => this.setState(Object.assign({}, this.state || {}, o));
+
+    const P = {
+      blue: ['#4BA3FF', '#0A6CFF'], orange: ['#FFB340', '#FF8A00'], indigo: ['#7A78FF', '#4F4CE0'],
+      green: ['#5EDB7D', '#28B04A'], teal: ['#5AD2E6', '#1AA5C2'], yellow: ['#FFD84D', '#F0B400'],
+      pink: ['#FF6F91', '#F0306A'], purple: ['#CF7DF2', '#A445D8'], graphite: ['#9A9AA0', '#6E6E75'],
+      red: ['#FF6F61', '#E8382B'], mint: ['#5FE0C6', '#12B394'], cyan: ['#64C8FF', '#1E9BF0'], brown: ['#C9A27A', '#9C7550']
+    };
+    const tile = (k) => 'linear-gradient(180deg, ' + P[k][0] + ' 0%, ' + P[k][1] + ' 100%)';
+    const I = {
+      checklist: 'M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2',
+      timer: 'M12 9v4l2.5 2M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM10 2h4',
+      house: 'M4 11l8-7 8 7v9H4zM10 20v-5h4v5',
+      leaf: 'M5 19c0-8 5-14 15-15-1 10-7 15-15 15zM5 19l7-7',
+      bubble: 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z',
+      egg: 'M12 3c3.6 0 6 5.3 6 10a6 6 0 0 1-12 0c0-4.7 2.4-10 6-10z',
+      bowl: 'M3 11h18a9 9 0 0 1-18 0zM8 7c0-1.5 1-2 1-3.5M12 7c0-1.5 1-2 1-3.5M16 7c0-1.5 1-2 1-3.5',
+      book: 'M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7',
+      terminal: 'M4 5h16v14H4zM8 10l3 2-3 2M13 15h3',
+      sparkles: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z',
+      window: 'M4 5h16v14H4zM4 9h16M7 7h.01M10 7h.01',
+      cpu: 'M7 7h10v10H7zM10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4',
+      wave: 'M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2',
+      drop: 'M12 3c3.5 4.2 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 2.5-6.8 6-11z',
+      photo: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15.5 8.5h.01',
+      shield: 'M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z',
+      display: 'M3 4h18v12H3zM8 20h8M12 16v4',
+      restart: 'M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5',
+      code: 'M8 8l-4 4 4 4M16 8l4 4-4 4',
+      globe: 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3',
+      network: 'M12 3v6M12 15v6M5 12h14M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6',
+      download: 'M12 4v11M7 10l5 5 5-5M5 20h14',
+      box: 'M4 8l8-4 8 4v8l-8 4-8-4zM4 8l8 4 8-4M12 12v8',
+      play: 'M7 4l12 8-12 8z', heart: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z',
+      doc: 'M6 3h9l4 4v14H6zM14 3v5h5', stop: 'M6 6h12v12H6z',
+      check: 'M5 12l5 5 9-10', excl: 'M12 6v7M12 18h.01', x: 'M7 7l10 10M17 7L7 17', lock: 'M12 10v4M12 17h.01'
+    };
+
+    const G = '#34C759', A = '#FF9F0A', R = '#FF3B30', N = '#AEAEB2';
+    const job = (n, c) => ({ n, c: c || G });
+    const port = (t, pub) => ({ t, cls: pub ? 'pub' : '' });
+    const ok = (code, ms) => ({ health: code + ' · ' + ms, hTone: 'ok' });
+
+    const groupsRaw = [
+      { title: 'Web apps', color: '#0A6CFF', rows: [
+        { name: '3things', t: 'blue', i: 'checklist', desc: 'node server + Cloudflare tunnel', jobs: [job('server'), job('tunnel')], ports: [port(':3216'), port('☁ :20248', 1)], ...ok('200', '7 ms'), hNote: 'GET /', up: '3d 1h' },
+        { name: 'fasting', t: 'orange', i: 'timer', desc: 'caddy + push + sync workers', jobs: [job('server'), job('push'), job('sync'), job('tunnel')], ports: [port(':3219'), port(':3223'), port(':3228'), port('☁ :20251', 1)], ...ok('200', '6 ms'), hNote: 'server restarted 5 m ago', up: '3d 1h' },
+        { name: 'homespaces', t: 'indigo', i: 'house', flag: 'Restarted', tone: 'warn', desc: 'last exit SIGTERM · came back', jobs: [job('server', A)], ports: [port(':8787')], ...ok('200', '41 ms'), hNote: 'back up on its own', up: '1h 0m' },
+        { name: 'nest', t: 'green', i: 'leaf', desc: 'node server + tunnel', jobs: [job('server'), job('tunnel')], ports: [port(':3217'), port('☁ :20249', 1)], ...ok('200', '59 ms'), hNote: 'GET /', up: '3d 1h' },
+        { name: 'signal', t: 'cyan', i: 'bubble', desc: '~/Library/Application Support/Signal', jobs: [job('server'), job('tunnel')], ports: [port(':3213'), port('☁ :20245', 1)], ...ok('200', '31 ms'), hNote: 'GET /', up: '3d 1h' },
+        { name: 'yolk', t: 'yellow', i: 'egg', desc: 'caddy static site + tunnel', jobs: [job('server'), job('tunnel')], ports: [port(':3218'), port('☁ :20250', 1)], ...ok('200', '18 ms'), hNote: 'GET /', up: '3d 1h' },
+        { name: 'kindaimai', t: 'pink', i: 'bowl', desc: 'caddy static site + tunnel', jobs: [job('server'), job('tunnel')], ports: [port(':3225'), port('☁ :20255', 1)], ...ok('200', '15 ms'), hNote: 'GET /', up: '3d 1h' },
+        { name: 'examer', t: 'purple', i: 'book', desc: 'caddy static site + tunnel', jobs: [job('server'), job('tunnel')], ports: [port(':3230'), port('☁ :20270', 1)], ...ok('200', '8 ms'), hNote: 'GET /', up: '3d 1h' },
+        { name: 'openchamber', t: 'graphite', i: 'terminal', desc: 'node web + opencode serve', jobs: [job('server'), job('tunnel')], ports: [port(':3235'), port(':4747'), port('☁ :20265', 1)], ...ok('200', '23 ms'), hNote: 'GET /', up: '1h 8m' }
+      ]},
+      { title: 'AI & agents', color: '#A445D8', rows: [
+        { name: 'hermes', t: 'purple', i: 'sparkles', desc: 'gateway + server + dashboard', jobs: [job('gateway'), job('server'), job('tunnel')], ports: [port(':9119'), port('☁ :20258', 1)], ...ok('302', '297 ms'), hNote: 'redirects to login', up: '3d 1h' },
+        { name: 'hermes-webui', t: 'indigo', i: 'window', desc: '~/hermes-webui · python', jobs: [job('server'), job('tunnel')], ports: [port(':8788'), port('☁ :20259', 1)], ...ok('302', '48 ms'), hNote: 'redirects to login', up: '3d 1h' },
+        { name: 'deepseek-harness', t: 'blue', i: 'cpu', desc: '~/.local/share/dsh', jobs: [job('agent')], ports: [port(':3080')], ...ok('401', '245 ms'), hNote: 'auth required · fine', up: '3d 1h' },
+        { name: 'codex-asr', t: 'pink', i: 'wave', desc: 'speech-to-text server', jobs: [job('agent')], ports: [port(':8790')], ...ok('404', '12 ms'), hNote: 'no page at / · fine', up: '22h 37m' }
+      ]},
+      { title: 'Data & stacks', color: '#E8382B', rows: [
+        { name: 'crystal-blood', t: 'red', i: 'drop', desc: 'Postgres · API · Next.js — on ProVault', jobs: [job('postgres'), job('stack'), job('cloudflared'), job('log-rotation', N)], ports: [port(':5432'), port(':5050'), port(':2024'), port(':3000'), port('☁ :20242', 1)], ...ok('200', '205 ms'), hNote: 'API /', up: '1d 13h', dep: true,
+          tree: [
+            { label: 'com.ode.crystalblood.postgres-supervisor', c: G, ports: [], pid: '', mem: '', indent: '0px', weight: '600' },
+            { label: 'postgres -D /Volumes/ProVault/…/postgres', c: G, ports: [':5432'], pid: '15806', mem: '5 MB', indent: '22px', weight: '400' },
+            { label: 'com.ode.crystalblood.stack-supervisor', c: G, ports: [], pid: '', mem: '', indent: '0px', weight: '600' },
+            { label: 'uvicorn · backend API', c: G, ports: [':5050'], pid: '16150', mem: '10 MB', indent: '22px', weight: '400' },
+            { label: 'python · agent server', c: G, ports: [':2024'], pid: '16207', mem: '—', indent: '22px', weight: '400' },
+            { label: 'next-server v15.5.18', c: G, ports: [':3000'], pid: '16321', mem: '7 MB', indent: '22px', weight: '400' },
+            { label: 'com.ode.crystalblood.production-cloudflared', c: G, ports: [':20242'], pid: '16349', mem: '—', indent: '0px', weight: '600' },
+            { label: 'com.ode.crystalblood.log-rotation · scheduled', c: N, ports: [], pid: '', mem: '', indent: '0px', weight: '600' }
+          ] },
+        { name: 'immich', t: 'teal', i: 'photo', desc: 'OrbStack container + tunnel', jobs: [job('tunnel'), job('container', N)], ports: [port(':2283'), port('☁ :20260', 1)], ...ok('200', '141 ms'), hNote: 'GET /', up: '3d 1h' }
+      ]},
+      { title: 'Infrastructure', color: '#6E6E75', rows: [
+        { name: 'Caddy', t: 'green', i: 'shield', desc: 'Homebrew · /opt/homebrew/etc/Caddyfile', jobs: [job('homebrew.mxcl.caddy')], ports: [port(':8443'), port(':2019')], health: 'port open', hTone: 'ok', hNote: 'TLS on :8443', up: '3d 1h' },
+        { name: 'RustDesk', t: 'blue', i: 'display', desc: 'remote desktop', jobs: [job('server'), job('service', N)], ports: [port(':21118')], health: 'port open', hTone: 'ok', hNote: 'service not loaded', up: '3d 1h' },
+        { name: 'Restore check', t: 'graphite', i: 'restart', flag: 'Failed', tone: 'bad', desc: 'com.ode.postreboot.restore-check', jobs: [job('after login', R)], ports: [], health: 'exit 1', hTone: 'bad', hNote: 'last run Oct 12', up: '—' }
+      ]}
+    ];
+
+    const match = (r) => !q || (r.name + ' ' + r.desc + ' ' + r.ports.map(p => p.t).join(' ') + ' ' + r.jobs.map(j => j.n).join(' ')).toLowerCase().includes(q);
+    let groups = groupsRaw.map(g => {
+      let rows = g.rows.filter(match);
+      if (filter === 'attention') rows = rows.filter(r => r.flag);
+      rows = rows.map(r => {
+        const isOpen = expanded === r.name && !!r.tree;
+        return Object.assign({ tone: 'ok', flag: false, dep: false, tree: [] }, r, {
+          tile: tile(r.t), icon: I[r.i],
+          expanded: isOpen, chev: isOpen ? 'open' : '',
+          chevColor: r.tree ? '#8E8E93' : 'transparent',
+          rowStyle: isOpen ? 'background: #F9F9FB' : '',
+          toggle: () => set({ expanded: expanded === r.name ? '' : r.name })
+        });
+      });
+      return { title: g.title, color: g.color, n: rows.length + (rows.length === 1 ? ' service' : ' services'), rows };
+    }).filter(g => g.rows.length);
+
+    const unmanagedRaw = [
+      { name: 'figma-console-mcp', t: 'pink', i: 'terminal', badge: 'Orphaned', tone: 'warn', cmd: 'node ~/.local/share/figma-console-mcp/…/local.js', ports: [':9225', ':9230', ':9231', ':9232'], age: '11 h 45 m', copies: '4 copies', why: 'Started by sessions that have since exited.', primary: 'Adopt…', primaryCls: 'primary', secondary: 'Stop all 4', open: true },
+      { name: 'opencode serve', t: 'graphite', i: 'code', badge: 'Orphaned', tone: 'warn', cmd: '~/.local/share/openchamber-deploy/…/opencode.exe serve', ports: [':49374', ':61585'], age: '23 m', copies: '1 copy', why: 'Same install as openchamber — likely a stray child.', primary: 'Attach to openchamber', primaryCls: 'tinted', secondary: 'Stop' },
+      { name: 'VS Code Server', t: 'cyan', i: 'code', badge: 'Expected', tone: 'info', cmd: '~/.vscode-server/code-2a59476 --cli-data-dir …', ports: [':64949'], age: '2 d 19 h', copies: '1 copy', why: 'Remote editing session. Fine to leave as is.', primary: 'Ignore', primaryCls: '', secondary: 'Stop' }
+    ];
+    const unmanaged = unmanagedRaw.filter(u => !q || (u.name + u.cmd + u.ports.join(' ')).toLowerCase().includes(q)).map(u => Object.assign({}, u, {
+      tile: tile(u.t), icon: I[u.i], primaryAct: u.open ? () => set({ adopt: true }) : undefined
+    }));
+
+    const apps = [
+      { name: 'OrbStack', mono: 'O', t: 'indigo', via: 'login item', ports: [':80', ':8080', ':2283', ':32222'] },
+      { name: 'Ollama', mono: 'O', t: 'graphite', via: 'login item', ports: [':11434'] },
+      { name: 'Figma Agent', mono: 'F', t: 'purple', via: 'login item', ports: [':44950', ':44960'] },
+      { name: 'Codex', mono: 'C', t: 'mint', via: 'child processes', ports: [':9223', ':9224', ':9227'] },
+      { name: 'Chrome', mono: 'C', t: 'yellow', via: 'remote debugging', ports: [':9222'] }
+    ].map(a => Object.assign({}, a, { tile: tile(a.t) }));
+
+    const fdef = [['all', 'All', 29], ['attention', 'Attention', 2], ['unmanaged', 'No agent', 6], ['managed', 'Managed', 18], ['apps', 'By apps', 5]];
+    const filters = fdef.map(([id, label, n]) => ({ label, n: String(n), cls: filter === id ? 'on' : '', pressed: filter === id ? 'true' : 'false', pick: () => set({ filter: id }) }));
+
+    const loginOn = s.loginOn ?? { OrbStack: true, Ollama: true, Claude: true, Lane: true, FigmaAgent: true };
+    const loginApps = [
+      { name: 'OrbStack', mono: 'O', t: 'indigo', desc: 'Docker & Linux machines · runs the immich container', ports: [':80', ':8080', ':2283'] },
+      { name: 'Ollama', mono: 'O', t: 'graphite', desc: 'Local models', ports: [':11434'] },
+      { name: 'Claude', mono: 'C', t: 'orange', desc: 'Desktop app', ports: [] },
+      { name: 'Lane', mono: 'L', t: 'green', desc: 'No listening ports', ports: [] },
+      { name: 'FigmaAgent', mono: 'F', t: 'purple', desc: 'Figma desktop helper', ports: [':44950', ':44960'] }
+    ].map(a => Object.assign({}, a, { tile: tile(a.t), on: loginOn[a.name] ? 'true' : 'false', sw: loginOn[a.name] ? 'on' : '', toggle: () => set({ loginOn: Object.assign({}, loginOn, { [a.name]: !loginOn[a.name] }) }) }));
+
+    const bgItems = [
+      { name: 'Tailscale', t: 'graphite', i: 'network', labels: 'network extension', note: 'How you reach mini remotely. Starts before login.', status: 'Running', tone: 'ok', action: 'Details', btn: '' },
+      { name: 'RustDesk', t: 'blue', i: 'display', labels: 'RustDesk_server · RustDesk_service', note: 'Server agent running; the service daemon isn’t loaded.', status: 'Partly running', tone: 'warn', action: 'Load Service', btn: 'tinted' },
+      { name: 'Google Updater', t: 'yellow', i: 'download', labels: 'GoogleUpdater.wake · keystone.agent · keystone.xpcservice', note: 'Not loaded, so Chrome won’t update in the background.', status: 'Not loaded', tone: 'info', action: 'Load', btn: '' },
+      { name: 'Docker', t: 'cyan', i: 'box', labels: 'com.docker.socket (daemon)', note: 'Docker Desktop isn’t installed — you use OrbStack. A leftover.', status: 'Leftover', tone: 'warn', action: 'Remove…', btn: 'tinted' }
+    ].map(b => Object.assign({}, b, { tile: tile(b.t), icon: I[b.i] }));
+
+    const offAgents = [
+      { label: 'com.crystalblood.stack', note: 'Old name — replaced by com.ode.crystalblood.stack-supervisor', action: 'Archive', c: N },
+      { label: 'com.crystalblood.postgres', note: 'Old name — replaced by com.ode.crystalblood.postgres-supervisor', action: 'Archive', c: N },
+      { label: 'com.crystalblood.cloudflared', note: 'Old name — replaced by …production-cloudflared', action: 'Archive', c: N },
+      { label: 'com.crystalblood.logrotate', note: 'Old name — replaced by com.ode.crystalblood.log-rotation', action: 'Archive', c: N },
+      { label: 'ai.hermes.serve', note: 'hermes already runs as ai.hermes.gateway and hermes-server.', action: 'Load', c: A },
+      { label: 'com.krittaprot.postreboot-check', note: 'A second restore check — com.ode.postreboot.restore-check is the live one.', action: 'Load', c: A },
+      { label: 'com.ode.stock-dip-radar-preview', note: 'Not loaded.', action: 'Load', c: A }
+    ];
+
+    const checks = [
+      { title: 'Someone needs to unlock mini at its keyboard', detail: 'FileVault is on with no auto-login. Nothing user-level starts until the password is typed there.', k: 'graphite', ic: 'lock', status: 'Needs you', action: false },
+      { title: '/Volumes/ProVault is mounted', detail: 'crystal-blood’s Postgres and MLflow data live here.', k: 'green', ic: 'check', status: 'OK', action: false },
+      { title: '34 launchd jobs will start on their own', detail: 'All have RunAtLoad or KeepAlive — 18 services, 41 ports.', k: 'green', ic: 'check', status: 'OK', action: false },
+      { title: '6 processes won’t come back', detail: 'figma-console-mcp ×4, opencode serve, VS Code Server.', k: 'orange', ic: 'excl', status: 'Warning', action: 'Review', act: () => set({ view: 'services', filter: 'unmanaged' }) },
+      { title: 'Restore check failed last time', detail: 'com.ode.postreboot.restore-check exited with code 1 on Oct 12.', k: 'red', ic: 'x', status: 'Failed', action: 'Open Log' },
+      { title: '5 apps reopen at login', detail: 'OrbStack, Lane, Ollama, Claude, FigmaAgent.', k: 'green', ic: 'check', status: 'OK', action: false }
+    ].map(c => Object.assign({ act: undefined }, c, { tile: tile(c.k), icon: I[c.ic] }));
+
+    const timeline = [
+      { time: '10:18', c: '#8E8E93', title: 'mini booted', detail: 'Waiting at the FileVault unlock screen' },
+      { time: '10:21', c: '#0A84FF', title: 'Unlocked at the keyboard', detail: 'Login items and agents start' },
+      { time: '10:21', c: '#34C759', title: 'Everything up in 2 s', detail: '34 jobs, every port answering' },
+      { time: '10:21', c: '#FF3B30', title: 'Restore check exited 1', detail: 'Everything else came back fine' }
+    ];
+
+    const adoptOn = s.adoptOn ?? { load: true, keep: true, logs: true, stop: true };
+    const adoptOpts = [
+      { id: 'load', k: 'blue', ic: 'play', title: 'Start at login', detail: 'RunAtLoad — comes back after a restart' },
+      { id: 'keep', k: 'green', ic: 'heart', title: 'Restart if it crashes', detail: 'KeepAlive, with a 10 s throttle' },
+      { id: 'logs', k: 'graphite', ic: 'doc', title: 'Keep logs', detail: '~/Library/Logs/figma-console-mcp/' },
+      { id: 'stop', k: 'red', ic: 'stop', title: 'Stop the 4 running copies', detail: 'After the managed one answers on :9230' }
+    ].map(o => Object.assign({}, o, { tile: tile(o.k), icon: I[o.ic], on: adoptOn[o.id] ? 'true' : 'false', sw: adoptOn[o.id] ? 'on' : '', toggle: () => set({ adoptOn: Object.assign({}, adoptOn, { [o.id]: !adoptOn[o.id] }) }) }));
+
+    const plist = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<plist version="1.0">',
+      '<dict>',
+      '  <key>Label</key>',
+      '  <string>com.ode.figma-console-mcp</string>',
+      '  <key>ProgramArguments</key>',
+      '  <array>',
+      '    <string>/Users/ode/.local/bin/node</string>',
+      '    <string>/Users/ode/.local/share/figma-console-mcp/node_modules/',
+      '            figma-console-mcp/dist/local.js</string>',
+      '  </array>',
+      '  <key>WorkingDirectory</key>',
+      '  <string>/Users/ode/Developer/research</string>',
+      adoptOn.load ? '  <key>RunAtLoad</key><true/>' : null,
+      adoptOn.keep ? '  <key>KeepAlive</key><true/>' : null,
+      adoptOn.keep ? '  <key>ThrottleInterval</key><integer>10</integer>' : null,
+      adoptOn.logs ? '  <key>StandardOutPath</key>' : null,
+      adoptOn.logs ? '  <string>/Users/ode/Library/Logs/figma-console-mcp/out.log</string>' : null,
+      adoptOn.logs ? '  <key>StandardErrorPath</key>' : null,
+      adoptOn.logs ? '  <string>/Users/ode/Library/Logs/figma-console-mcp/err.log</string>' : null,
+      '</dict>',
+      '</plist>'
+    ].filter(x => x !== null).join('\n');
+
+    const go = (v) => () => set({ view: v, adopt: false });
+    return {
+      themeCls: this.props.dark ? 'dark' : '',
+      q: s.q ?? '',
+      onSearch: (e) => set({ q: e.target.value }),
+      isServices: view === 'services', isLogin: view === 'login', isRestart: view === 'restart',
+      navServices: view === 'services' ? 'on' : '', navLogin: view === 'login' ? 'on' : '', navRestart: view === 'restart' ? 'on' : '',
+      goServices: () => set({ view: 'services', filter: 'all', adopt: false }),
+      goUnmanaged: () => set({ view: 'services', filter: 'unmanaged', adopt: false }),
+      goAttention: () => set({ view: 'services', filter: 'attention', adopt: false }),
+      goLogin: go('login'), goRestart: go('restart'),
+      filters,
+      showUnmanaged: (filter === 'all' || filter === 'unmanaged') && unmanaged.length > 0,
+      showManaged: (filter === 'all' || filter === 'managed' || filter === 'attention') && groups.length > 0,
+      showApps: filter === 'all' || filter === 'apps',
+      unmanaged, groups, apps,
+      loginApps, bgItems, offAgents, checks, timeline,
+      adoptOpen: adoptOpen && view === 'services',
+      closeAdopt: () => set({ adopt: false }),
+      adoptOpts, plist
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Harbor — Menu-bar popover</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+.mb{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;font-size:13px;line-height:1.35;-webkit-font-smoothing:antialiased}
+.rounded{font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+.mono{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:11px}
+.half{--desk:#D9E0EA;--bar:rgba(246,246,248,.82);--bartext:#1D1D1F;--pop:rgba(250,250,252,.96);--popedge:rgba(0,0,0,.12);--text:#1D1D1F;--muted:#6E6E73;--sep:rgba(0,0,0,.07);--row:rgba(0,0,0,.035);--hover:rgba(0,0,0,.05);--chip:#FFFFFF;--btn:rgba(0,0,0,.06);--sel:rgba(0,113,227,.16);--okc:#17692F;--okb:#E2F6E7;--warnc:#8F4B00;--warnb:#FFEFD6;--badc:#B0201A;--badb:#FFE5E3;--primary:#0071E3;--switch-off:#E3E3E8}
+.half.dark{--desk:#1A1C21;--bar:rgba(40,40,46,.82);--bartext:#F5F5F7;--pop:rgba(38,38,42,.97);--popedge:rgba(255,255,255,.12);--text:#F5F5F7;--muted:#9A9AA1;--sep:rgba(255,255,255,.08);--row:rgba(255,255,255,.04);--hover:rgba(255,255,255,.07);--chip:rgba(255,255,255,.06);--btn:rgba(255,255,255,.1);--sel:rgba(10,132,255,.32);--okc:#63D884;--okb:rgba(52,199,89,.17);--warnc:#FFB547;--warnb:rgba(255,159,10,.17);--badc:#FF8A80;--badb:rgba(255,69,58,.18);--primary:#0A84FF;--switch-off:rgba(255,255,255,.16)}
+.tile{display:inline-flex;align-items:center;justify-content:center;flex:none;color:#fff;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.15)}
+.prow{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:9px}
+.prow:hover{background:var(--hover)}
+.lbl{font-size:11px;font-weight:600;color:var(--muted);padding:10px 10px 4px}
+.pbtn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:26px;padding:0 11px;border:0;border-radius:999px;background:var(--btn);color:var(--text);font:inherit;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap}
+.pbtn.primary{background:var(--primary);color:#fff}
+.ib{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:999px;background:transparent;color:var(--muted);cursor:pointer;padding:0;flex:none}
+.ib:hover{background:var(--hover);color:var(--text)}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.switch{width:34px;height:20px;border-radius:999px;border:0;background:var(--switch-off);position:relative;cursor:pointer;padding:0;flex:none}
+.switch span{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.switch.on{background:#30C158}
+.switch.on span{left:16px}
+button:focus-visible{outline:3px solid rgba(0,113,227,.5);outline-offset:1px}
+</style>
+</helmet>
+<div class="mb" style="width: 1040px; height: 820px; display: flex">
+<sc-for list="{{themes}}" as="t" hint-placeholder-count="2">
+<div class="half {{t.cls}}" style="flex: 1; position: relative; background: var(--desk); color: var(--text); overflow: hidden">
+
+<div style="height: 30px; background: var(--bar); color: var(--bartext); display: flex; align-items: center; justify-content: flex-end; gap: 14px; padding: 0 14px; font-size: 13px; font-weight: 500; box-shadow: 0 .5px 0 var(--sep)">
+<span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 22px; border-radius: 5px; background: var(--sel); position: relative">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Harbor menu-bar icon, needs a look"><circle cx="12" cy="5" r="2.2"></circle><path d="M12 7.2V21M8 11h8M4.5 13.5a7.5 7.5 0 0 0 15 0"></path></svg>
+<span style="position: absolute; top: 2px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: #FF9F0A; box-shadow: 0 0 0 1.5px var(--desk)"></span>
+</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0M12 19.5h.01"></path></svg>
+<span>Thu 15 Oct 11:42</span>
+</div>
+
+<div style="position: absolute; top: 38px; right: 36px; width: 360px; background: var(--pop); border-radius: 14px; box-shadow: 0 0 0 .5px var(--popedge), 0 18px 50px rgba(0,0,0,.28); padding: 8px; box-sizing: border-box; display: flex; flex-direction: column">
+
+<div style="display: flex; align-items: center; gap: 11px; padding: 8px 10px 10px">
+<span class="tile" style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(180deg, #FFFFFF 0%, #ECEDF1 100%); box-shadow: inset 0 0 0 .5px rgba(0,0,0,.14), 0 1px 3px rgba(0,0,0,.18)" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14213A" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"></circle><path d="M12 7.2V21M8 11h8M4.5 13.5a7.5 7.5 0 0 0 15 0"></path></svg></span>
+<div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
+<span style="font-weight: 700; font-size: 14px">mini · 2 things need a look</span>
+<span style="font-size: 12px; color: var(--muted)">Up 3 days · scanned 4 s ago</span>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 0 4px 6px">
+<div style="background: var(--okb); color: var(--okc); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column"><b class="rounded" style="font-size: 20px; line-height: 1.1">34</b><span style="font-size: 11px; font-weight: 600">running</span></div>
+<div style="background: var(--warnb); color: var(--warnc); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column"><b class="rounded" style="font-size: 20px; line-height: 1.1">6</b><span style="font-size: 11px; font-weight: 600">no agent</span></div>
+<div style="background: var(--badb); color: var(--badc); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column"><b class="rounded" style="font-size: 20px; line-height: 1.1">1</b><span style="font-size: 11px; font-weight: 600">failed</span></div>
+</div>
+
+<div class="lbl">Needs a look</div>
+<sc-for list="{{alerts}}" as="a" hint-placeholder-count="2">
+<div class="prow">
+<span class="tile" style="width: 26px; height: 26px; border-radius: 7px; background: {{a.tile}}" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="{{a.icon}}"></path></svg></span>
+<div style="display: flex; flex-direction: column; flex: 1; min-width: 0"><span style="font-weight: 600">{{a.title}}</span><span style="font-size: 11.5px; color: var(--muted)">{{a.sub}}</span></div>
+<button class="pbtn">{{a.action}}</button>
+</div>
+</sc-for>
+
+<div style="height: 1px; background: var(--sep); margin: 6px 10px"></div>
+<div class="lbl">Pinned</div>
+<sc-for list="{{pinned}}" as="p" hint-placeholder-count="4">
+<div class="prow">
+<span class="tile" style="width: 26px; height: 26px; border-radius: 7px; background: {{p.tile}}" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="{{p.icon}}"></path></svg></span>
+<div style="display: flex; flex-direction: column; flex: 1; min-width: 0"><span style="font-weight: 600">{{p.name}}</span><span class="mono" style="color: var(--muted)">{{p.ports}}</span></div>
+<span class="dot" style="color: #34C759" aria-label="Running"></span>
+<button class="ib" aria-label="Restart {{p.name}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"></path></svg></button>
+<button class="ib" aria-label="Open {{p.name}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"></path></svg></button>
+</div>
+</sc-for>
+
+<div style="height: 1px; background: var(--sep); margin: 6px 10px"></div>
+<div class="prow">
+<span class="tile" style="width: 26px; height: 26px; border-radius: 7px; background: linear-gradient(180deg, #FFB340, #FF8A00)" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v8M6.3 6.8a8 8 0 1 0 11.4 0"></path></svg></span>
+<div style="display: flex; flex-direction: column; flex: 1"><span style="font-weight: 600">Restart readiness</span><span style="font-size: 11.5px; color: var(--muted)">Safe to restart · 2 notes · needs keyboard unlock</span></div>
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted)" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</div>
+<div class="prow">
+<span class="tile" style="width: 26px; height: 26px; border-radius: 7px; background: linear-gradient(180deg, #FF6F61, #E8382B)" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4"></path></svg></span>
+<span style="flex: 1; font-weight: 600">Notify me when something stops</span>
+<button class="switch {{notifySw}}" onClick="{{toggleNotify}}" aria-pressed="{{notifyOn}}" aria-label="Notify me when something stops"><span></span></button>
+</div>
+
+<div style="display: flex; align-items: center; gap: 6px; padding: 10px 6px 4px; margin-top: 4px; border-top: 1px solid var(--sep)">
+<button class="pbtn primary">Open Harbor</button>
+<button class="pbtn">Rescan</button>
+<span style="flex: 1"></span>
+<button class="ib" aria-label="Settings"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
+</div>
+</div>
+
+<div style="position: absolute; left: 24px; bottom: 24px; display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: var(--muted)">
+<span style="font-weight: 600; color: var(--text)">Menu-bar icon</span>
+<sc-for list="{{states}}" as="st" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="position: relative; display: inline-flex; color: var(--text)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2.2"></circle><path d="M12 7.2V21M8 11h8M4.5 13.5a7.5 7.5 0 0 0 15 0"></path></svg><span style="position: absolute; top: -2px; right: -3px; width: 7px; height: 7px; border-radius: 50%; background: {{st.c}}; box-shadow: 0 0 0 1.5px var(--desk)"></span></span>
+<span>{{st.label}}</span>
+</div>
+</sc-for>
+</div>
+<span style="position: absolute; right: 24px; bottom: 24px; font-size: 12px; font-weight: 600; color: var(--muted)">{{t.name}}</span>
+</div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1040,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const notify = s.notify ?? true;
+    const tile = (a, b) => 'linear-gradient(180deg, ' + a + ' 0%, ' + b + ' 100%)';
+    return {
+      themes: [{ cls: '', name: 'Light' }, { cls: 'dark', name: 'Dark' }],
+      alerts: [
+        { title: 'Restore check failed', sub: 'exit 1 after the Oct 12 restart', action: 'Log', tile: tile('#FF6F61', '#E8382B'), icon: 'M7 7l10 10M17 7L7 17' },
+        { title: 'figma-console-mcp ×4', sub: 'Orphaned 11 h · won’t survive a restart', action: 'Review', tile: tile('#FFB340', '#FF8A00'), icon: 'M12 6v7M12 18h.01' }
+      ],
+      pinned: [
+        { name: 'crystal-blood', ports: ':3000 :5050 :5432 ☁', tile: tile('#FF6F61', '#E8382B'), icon: 'M12 3c3.5 4.2 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 2.5-6.8 6-11z' },
+        { name: 'hermes', ports: ':9119 ☁', tile: tile('#CF7DF2', '#A445D8'), icon: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z' },
+        { name: '3things', ports: ':3216 ☁', tile: tile('#4BA3FF', '#0A6CFF'), icon: 'M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2' },
+        { name: 'fasting', ports: ':3219 :3223 :3228 ☁', tile: tile('#FFB340', '#FF8A00'), icon: 'M12 9v4l2.5 2M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM10 2h4' }
+      ],
+      states: [
+        { c: '#34C759', label: 'All good' },
+        { c: '#FF9F0A', label: 'Something won’t survive a restart' },
+        { c: '#FF3B30', label: 'A service is down' }
+      ],
+      notifyOn: notify ? 'true' : 'false',
+      notifySw: notify ? 'on' : '',
+      toggleNotify: () => this.setState({ notify: !notify })
+    };
+  }
+}
+</script>
+</body>
+</html>
