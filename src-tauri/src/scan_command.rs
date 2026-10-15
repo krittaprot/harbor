@@ -1,4 +1,5 @@
-//! Bounded read-only scanner subprocesses. Never used for service mutations.
+//! Bounded subprocess capture. Deadlines terminate only the owned helper;
+//! callers must not interpret a timeout as proof that a requested mutation rolled back.
 use std::io::{self, Read};
 use std::os::fd::AsRawFd;
 use std::process::{Command, Output, Stdio};
@@ -34,6 +35,10 @@ fn drain(pipe: &mut impl Read, bytes: &mut Vec<u8>) -> io::Result<()> {
 }
 
 pub fn output(program: &str, args: &[&str]) -> io::Result<Output> {
+    output_with_timeout(program, args, Duration::from_secs(3))
+}
+
+pub fn output_with_timeout(program: &str, args: &[&str], timeout: Duration) -> io::Result<Output> {
     let mut child = Command::new(program)
         .args(args)
         .stdin(Stdio::null())
@@ -60,10 +65,10 @@ pub fn output(program: &str, args: &[&str]) -> io::Result<Output> {
                     stderr: err,
                 });
             }
-            if started.elapsed() >= Duration::from_secs(3) {
+            if started.elapsed() >= timeout {
                 return Err(io::Error::new(
                     io::ErrorKind::TimedOut,
-                    format!("{program} exceeded 3 seconds"),
+                    format!("{program} exceeded {} seconds", timeout.as_secs()),
                 ));
             }
             std::thread::sleep(Duration::from_millis(10));

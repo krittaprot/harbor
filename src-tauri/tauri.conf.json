@@ -26,6 +26,7 @@
     }
   },
   "bundle": {
+    "macOS": { "infoPlist": "Info.plist", "signingIdentity": "-" },
     "active": true,
     "targets": "all",
     "icon": [

@@ -87,15 +87,29 @@ fn is_home_agent(source: &JobSource, config: &PlistConfig) -> bool {
 }
 
 fn ensure_user_agent(plist_path: &str) -> Result<(), AppError> {
-    let home = dirs::home_dir().unwrap_or_default();
-    let user_agents = home.join("Library/LaunchAgents");
-    if !plist_path.starts_with(user_agents.to_str().unwrap_or("")) {
-        return Err(AppError::Launchctl(
-            "Cannot start/stop system agents or daemons. Only user agents (~/Library/LaunchAgents) can be managed."
-                .to_string(),
-        ));
+    crate::config::user_plist(plist_path)
+        .map(|_| ())
+        .map_err(AppError::Plist)
+}
+
+fn ensure_user_label(label: &str) -> Result<(), AppError> {
+    if !crate::config::label_valid(label) {
+        return Err(AppError::Plist("Invalid launchd label".into()));
     }
-    Ok(())
+    let found = plist_util::scan_plist_files()
+        .into_iter()
+        .any(|(path, source)| {
+            source == JobSource::UserAgent
+                && ensure_user_agent(&path).is_ok()
+                && plist_util::parse_plist(&path).is_ok_and(|p| p.label == label)
+        });
+    if found {
+        Ok(())
+    } else {
+        Err(AppError::Plist(
+            "Label is not backed by a writable user LaunchAgent".into(),
+        ))
+    }
 }
 
 #[tauri::command]
@@ -209,6 +223,10 @@ pub async fn restart_job(plist_path: String) -> Result<(), AppError> {
 #[tauri::command]
 pub async fn kickstart_job(label: String, plist_path: String) -> Result<(), AppError> {
     ensure_user_agent(&plist_path)?;
+    ensure_user_label(&label)?;
+    if plist_util::parse_plist(&plist_path)?.label != label {
+        return Err(AppError::Plist("Label does not match plist".into()));
+    }
     // Ensure the service is loaded before kickstarting
     let loaded = launchctl::list_loaded().unwrap_or_default();
     let is_loaded = loaded.iter().any(|s| s.label == label);
@@ -220,21 +238,30 @@ pub async fn kickstart_job(label: String, plist_path: String) -> Result<(), AppE
 
 #[tauri::command]
 pub async fn enable_job(label: String) -> Result<(), AppError> {
+    ensure_user_label(&label)?;
     launchctl::enable(&label)
 }
 
 #[tauri::command]
 pub async fn disable_job(label: String) -> Result<(), AppError> {
+    ensure_user_label(&label)?;
     launchctl::disable(&label)
 }
 
 #[tauri::command]
 pub async fn save_job(plist_path: String, config: PlistConfig) -> Result<(), AppError> {
+    ensure_user_agent(&plist_path)?;
+    if !crate::config::label_valid(&config.label) {
+        return Err(AppError::Plist("Invalid launchd label".into()));
+    }
     plist_util::write_plist(&plist_path, &config)
 }
 
 #[tauri::command]
 pub async fn create_job(label: String, config: PlistConfig) -> Result<String, AppError> {
+    if !crate::config::label_valid(&label) || config.label != label {
+        return Err(AppError::Plist("Invalid or mismatched label".into()));
+    }
     let agents_dir = plist_util::get_user_agents_dir();
     if !agents_dir.exists() {
         std::fs::create_dir_all(&agents_dir)?;
@@ -251,6 +278,11 @@ pub async fn create_job(label: String, config: PlistConfig) -> Result<String, Ap
         }
     }
     let path = agents_dir.join(format!("{label}.plist"));
+    if path.exists() {
+        return Err(AppError::Plist(
+            "A plist with this label already exists".into(),
+        ));
+    }
     let path_str = path
         .to_str()
         .ok_or_else(|| AppError::Plist("invalid path".to_string()))?
@@ -261,11 +293,27 @@ pub async fn create_job(label: String, config: PlistConfig) -> Result<String, Ap
 
 #[tauri::command]
 pub async fn save_raw_plist(plist_path: String, xml: String) -> Result<(), AppError> {
+    ensure_user_agent(&plist_path)?;
+    let value = plist::Value::from_reader_xml(xml.as_bytes())
+        .map_err(|e| AppError::Plist(e.to_string()))?;
+    let label = value
+        .as_dictionary()
+        .and_then(|d| d.get("Label"))
+        .and_then(|l| l.as_string())
+        .ok_or_else(|| AppError::Plist("Label is required".into()))?;
+    if !crate::config::label_valid(label) {
+        return Err(AppError::Plist("Invalid launchd label".into()));
+    }
     plist_util::write_raw_plist(&plist_path, &xml)
 }
 
 #[tauri::command]
 pub async fn delete_job(plist_path: String, label: String) -> Result<(), AppError> {
+    ensure_user_agent(&plist_path)?;
+    ensure_user_label(&label)?;
+    if plist_util::parse_plist(&plist_path)?.label != label {
+        return Err(AppError::Plist("Label does not match plist".into()));
+    }
     let _ = launchctl::bootout(&plist_path);
     let _ = launchctl::disable(&label);
     if std::path::Path::new(&plist_path).exists() {
