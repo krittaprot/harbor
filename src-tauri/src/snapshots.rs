@@ -73,6 +73,13 @@ pub fn compare(
         .filter_map(|p| p.started_at)
         .filter(|t| *t >= boot)
         .min();
+    let temporary_pids: BTreeSet<_> = before
+        .snapshot
+        .unmanaged
+        .iter()
+        .filter(|g| g.verdict == "Expected")
+        .flat_map(|g| g.copies.iter().map(|p| p.pid))
+        .collect();
     Some(RestartReport {
         before: before.snapshot.taken_at.to_rfc3339(),
         boot_time: boot.to_rfc3339(),
@@ -86,6 +93,7 @@ pub fn compare(
             .snapshot
             .unmanaged
             .iter()
+            .filter(|g| g.verdict != "Expected")
             .filter(|g| !after.unmanaged.iter().any(|n| n.key == g.key))
             .map(|g| g.name.clone())
             .collect(),
@@ -93,6 +101,7 @@ pub fn compare(
             .snapshot
             .ports
             .iter()
+            .filter(|p| !temporary_pids.contains(&p.pid))
             .map(|p| p.port)
             .collect::<BTreeSet<_>>()
             .difference(&after.ports.iter().map(|p| p.port).collect())
@@ -195,6 +204,62 @@ pub async fn restart_machine(confirmed: bool, app: tauri::AppHandle) -> Result<(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn temporary_processes_and_their_ports_are_not_missing_after_restart() {
+        use crate::model::{PortInfo, ProcInfo, UnmanagedGroup};
+        let t = chrono::DateTime::from_timestamp(1000, 0).unwrap();
+        let mut before = Snapshot {
+            taken_at: t,
+            ..Default::default()
+        };
+        for (pid, port, verdict) in [
+            (10, 9000, "Expected"),
+            (11, 9001, "Orphaned"),
+            (12, 9002, "Expected"),
+            (13, 9002, "Unknown"),
+        ] {
+            let binding = PortInfo {
+                pid,
+                port,
+                addr: "127.0.0.1".into(),
+            };
+            before.ports.push(binding.clone());
+            before.unmanaged.push(UnmanagedGroup {
+                key: format!("process-{pid}"),
+                name: format!("process-{pid}"),
+                copies: vec![ProcInfo {
+                    pid,
+                    ppid: 1,
+                    uid: Some(501),
+                    name: "fixture".into(),
+                    argv: vec![],
+                    cwd: None,
+                    cpu: None,
+                    mem_bytes: 0,
+                    started_at: Some(t),
+                    launchd_label: None,
+                }],
+                ports: vec![binding],
+                verdict: verdict.into(),
+                app_path: None,
+                hint: None,
+            });
+        }
+        let saved = SavedSnapshot {
+            snapshot: before,
+            login: None,
+        };
+        let mut after = Snapshot {
+            taken_at: t + chrono::Duration::seconds(120),
+            ..Default::default()
+        };
+        after.system.boot_time = Some(t + chrono::Duration::seconds(60));
+        let report = compare(&saved, &after, None).unwrap();
+        assert_eq!(report.unmanaged_missing, vec!["process-11", "process-13"]);
+        // A port shared with a non-temporary process still needs to be reported.
+        assert_eq!(report.ports_missing, vec![9001, 9002]);
+    }
+
     #[test]
     fn restart_comparison_requires_a_new_boot_and_reports_missing_ports() {
         let t = chrono::DateTime::from_timestamp(1000, 0).unwrap();

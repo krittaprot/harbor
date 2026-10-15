@@ -11,6 +11,19 @@ The CLI works without the GUI and shares scanner/grouping/health/operations code
 28 Rust unit tests, three process-contract tests and owned-fixture CLI smoke checks passed.
 Source changes are committed locally; this feature branch has not been pushed.
 
+## Temporary unmanaged processes (2026-10-15)
+
+Services now exposes **Mark temporary / Undo temporary** on each unmanaged command group,
+replacing the subtle “Mark expected” icon. The persisted choice covers all copies and future
+runs of that group. Processes remain visible with a Temporary badge, excluded from warning
+counts and missing-process/port restart comparisons when marked in the saved baseline.
+The existing config `ignored` list and JSON `Expected` verdict remain compatible; CLI output
+adds an explanatory hint. No real processes were marked or stopped during implementation.
+Verified: 29 Rust unit + 3 CLI contract tests, lint and frontend build, and a built-UI browser
+check of mark/undo and responsive overflow with mocked IPC (not native runtime acceptance).
+Clippy passed with all targets/features and warnings denied. Normal release/debug bundles
+were rebuilt, the release signature verified, and the installed CLI refreshed.
+
 ## Read first
 
 Read `../AGENTS.md`, `../APPS.md`, `docs/PLAN.md`, `docs/PHASE-1.md` and `docs/VERIFICATION.md`.

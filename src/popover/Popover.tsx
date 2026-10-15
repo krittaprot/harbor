@@ -57,7 +57,7 @@ export function Popover({
             </div>
             <div className="h-warn">
               <b>{s.counts.unmanaged}</b>
-              <span>no agent</span>
+              <span>unmanaged to review</span>
             </div>
             <div className="h-bad">
               <b>
@@ -102,7 +102,7 @@ export function Popover({
             >
               <ServiceTile icon="warning" tint="orange" size="small" />
               <span className="h-grow">
-                {s.counts.unmanaged} processes without an agent
+                {s.counts.unmanaged} unmanaged processes to review
               </span>
             </button>
           )}

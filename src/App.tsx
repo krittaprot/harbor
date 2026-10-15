@@ -221,7 +221,7 @@ function App() {
             restart={() =>
               setConfirm({
                 title: `Restart ${snapshot.system.hostname}?`,
-                description: `${snapshot.counts.unmanaged} processes have no launch agent. ${snapshot.counts.attention} services need attention. ${snapshot.system.filevault_on ? "FileVault requires someone to unlock this Mac." : "Review login and volume readiness first."} Harbor saves a fresh snapshot before requesting macOS restart.`,
+                description: `${snapshot.counts.unmanaged} unmanaged processes need review (temporary processes excluded). ${snapshot.counts.attention} services need attention. ${snapshot.system.filevault_on ? "FileVault requires someone to unlock this Mac." : "Review login and volume readiness first."} Harbor saves a fresh snapshot before requesting macOS restart.`,
                 label: "Restart Mac",
                 action: api.restartMachine,
               })

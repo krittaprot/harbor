@@ -365,7 +365,7 @@ export function Services({
             <ServiceTile icon="warning" tint="yellow" size="large" />
             <div>
               <b>{s.counts.unmanaged}</b>
-              <span>No launch agent</span>
+              <span>Unmanaged to review</span>
             </div>
           </button>
           <button
@@ -421,8 +421,9 @@ export function Services({
               <div>
                 <h2>Running without a launch agent</h2>
                 <p>
-                  Listening now. Harbor cannot verify that these will return
-                  after a restart.
+                  Mark intentionally short-lived processes as temporary to
+                  exclude them from missing-agent warnings. This is remembered
+                  for all copies of the same command group, including future runs.
                 </p>
               </div>
             </div>
@@ -438,7 +439,7 @@ export function Services({
                     <span
                       className={`h-pill ${g.verdict === "Expected" ? "h-neutral" : "h-warn"}`}
                     >
-                      {g.verdict}
+                      {g.verdict === "Expected" ? "Temporary" : g.verdict}
                       {g.copies.length > 1
                         ? ` · ${g.copies.length} copies`
                         : ""}
@@ -450,6 +451,11 @@ export function Services({
                   >
                     {g.copies[0]?.argv.join(" ") || "Command unavailable"}
                   </p>
+                  {g.verdict === "Expected" && (
+                    <p className="h-sub">
+                      Intentionally temporary · not expected after restart
+                    </p>
+                  )}
                 </div>
                 <Ports ports={g.ports} />
                 <div className="h-wrap">
@@ -463,16 +469,19 @@ export function Services({
                     Stop
                   </button>
                   <button
-                    className="h-icon-button"
+                    className="h-button h-small"
+                    disabled={busy}
                     onClick={() => ignore(g)}
                     title={
                       g.verdict === "Expected"
-                        ? "Stop ignoring"
-                        : "Mark expected"
+                        ? "Include this command group in missing-agent warnings again"
+                        : "Remember that this command group does not need a launch agent"
                     }
-                    aria-label={`Toggle expected status for ${g.name}`}
+                    aria-label={`${g.verdict === "Expected" ? "Undo temporary" : "Mark temporary"} for ${g.name}`}
                   >
-                    <Pin size={14} />
+                    {g.verdict === "Expected"
+                      ? "Undo temporary"
+                      : "Mark temporary"}
                   </button>
                 </div>
               </div>

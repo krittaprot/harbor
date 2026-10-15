@@ -57,8 +57,8 @@ export function RestartReadiness({
       icon: "services",
     },
     {
-      title: `${s.counts.unmanaged} processes have no launch agent`,
-      detail: "Review them before restarting. They may need a manual start.",
+      title: `${s.counts.unmanaged} unmanaged processes to review`,
+      detail: "They may need a manual start. Processes marked temporary are excluded.",
       tone: s.counts.unmanaged ? "orange" : "green",
       icon: "warning",
       action: "Review",
@@ -125,14 +125,14 @@ export function RestartReadiness({
               </h2>
               <p>
                 {auto} jobs are configured to return after login.{" "}
-                {s.counts.unmanaged} processes have no launch agent.
+                {s.counts.unmanaged} unmanaged processes still need review.
               </p>
             </div>
           </div>
           <div
             className="h-readiness-bar"
             role="img"
-            aria-label={`${auto} automatic jobs, ${s.counts.unmanaged} unmanaged processes, ${failed} failed jobs`}
+            aria-label={`${auto} automatic jobs, ${s.counts.unmanaged} unmanaged processes to review, ${failed} failed jobs`}
           >
             <span className="h-bar-ok" style={{ flex: Math.max(1, auto) }} />
             <span className="h-bar-warn" style={{ flex: s.counts.unmanaged }} />
@@ -145,7 +145,7 @@ export function RestartReadiness({
             </span>
             <span>
               <i className="h-dot h-amber" />
-              {s.counts.unmanaged} no agent
+              {s.counts.unmanaged} to review
             </span>
             <span>
               <i className="h-dot h-red" />

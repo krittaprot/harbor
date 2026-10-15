@@ -341,6 +341,9 @@ pub fn unmanaged(
             .extend(ports.iter().filter(|s| s.pid == process.pid).cloned());
     }
     for group in groups.values_mut() {
+        if config.ignored.contains(&group.key) {
+            group.hint = Some("Marked temporary by the user; not expected after restart. Applies to all copies of this command group, including future runs.".into());
+        }
         group.verdict = if group.app_path.is_some() || config.ignored.contains(&group.key) {
             "Expected"
         } else if group.copies.iter().all(|p| p.ppid == 1) {
@@ -471,5 +474,38 @@ mod tests {
         assert_eq!(figma.copies.len(), 2);
         assert_eq!(figma.ports.len(), 2);
         assert_eq!(figma.verdict, "Orphaned");
+
+        // A remembered user choice survives config serialization and future PIDs.
+        let mut config = Config::default();
+        config.ignored.push(figma.key.clone());
+        let mut config: Config = toml::from_str(&toml::to_string(&config).unwrap()).unwrap();
+        let mut later_processes = processes.clone();
+        let mut later_ports = ports.clone();
+        for process in &mut later_processes {
+            process.pid += 100;
+        }
+        for port in &mut later_ports {
+            port.pid += 100;
+        }
+        let (groups, _) = unmanaged(&later_processes, &later_ports, &config);
+        let expected = groups.iter().find(|g| g.key == figma.key).unwrap();
+        assert_eq!(expected.verdict, "Expected");
+        assert!(expected.hint.as_ref().unwrap().contains("temporary"));
+        let mut snapshot = crate::model::Snapshot {
+            unmanaged: groups,
+            ..Default::default()
+        };
+        crate::scanner::update_counts(&mut snapshot);
+        assert_eq!(snapshot.counts.unmanaged, 1);
+        config.ignored.clear();
+        snapshot.unmanaged = unmanaged(&later_processes, &later_ports, &config).0;
+        crate::scanner::update_counts(&mut snapshot);
+        assert_eq!(snapshot.counts.unmanaged, 3);
+        assert!(
+            snapshot
+                .unmanaged
+                .iter()
+                .all(|g| g.verdict == "Orphaned" && g.hint.is_none())
+        );
     }
 }

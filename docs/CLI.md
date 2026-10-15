@@ -64,6 +64,14 @@ reports current job state and exit status. Snapshots include timestamps and diag
 non-root macOS process visibility can be incomplete. IDs, PIDs, ports and counts may change
 between calls. No configuration, login cache or automatic snapshot is written by inventory.
 
+In the desktop app, **Services → Running without a launch agent → Mark temporary** remembers
+that a command group is intentionally short-lived. It applies to all current and future copies
+of that group; **Undo temporary** restores review warnings. These processes stay visible but
+are excluded from unmanaged warning counts and, in newly saved baselines, missing-process/port
+restart findings. Existing “Mark expected” choices use the same preference. In CLI JSON,
+they retain `verdict: "Expected"` for compatibility, with a `hint` explaining the temporary
+choice. This preference does not create a LaunchAgent or stop any process.
+
 ## Logs and login apps
 
 ```bash
