@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { Check, LoaderCircle, TriangleAlert } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -6,7 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { adoptPreview, adoptApply, type AdoptOptions } from "@/lib/harbor"
+import { adoptPreview, adoptApply, type AdoptOptions, type AdoptionProgress } from "@/lib/harbor"
 import type { UnmanagedGroup } from "@/types"
 import { ServiceTile } from "./ServiceTile"
 export function AdoptSheet({
@@ -29,12 +30,29 @@ export function AdoptSheet({
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<string[] | null>(null)
+  const [progress, setProgress] = useState<AdoptionProgress | null>(null)
+  const [elapsed, setElapsed] = useState(0)
+  const started = useRef(0)
+  const applying = useRef(false)
+  const scroll = useRef<HTMLDivElement>(null)
+  const [applyFailed, setApplyFailed] = useState(false)
+  useEffect(() => {
+    if (busy || error || result) scroll.current?.scrollTo({ top: 0 })
+  }, [busy, error, result])
+  useEffect(() => {
+    if (!busy) return
+    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - started.current) / 1000)), 1000)
+    return () => clearInterval(timer)
+  }, [busy])
   useEffect(() => {
     if (group) {
       setLabel(
         `com.harbor.${group.name.toLowerCase().replace(/[^a-z0-9._-]/g, "-")}`
       )
       setResult(null)
+      setProgress(null)
+      setApplyFailed(false)
+      setError(null)
       setOptions({
         run_at_load: true,
         keep_alive: true,
@@ -46,6 +64,8 @@ export function AdoptSheet({
   useEffect(() => {
     if (!group || !label) return
     let cancelled = false
+    setProgress(null)
+    setApplyFailed(false)
     setXml("")
     const timer = setTimeout(() => {
       void adoptPreview(group.key, label, options)
@@ -65,17 +85,32 @@ export function AdoptSheet({
     }
   }, [group, label, options])
   async function apply() {
-    if (!group) return
+    if (!group || applying.current) return
+    applying.current = true
+    started.current = Date.now()
+    setElapsed(0)
+    setError(null)
+    setApplyFailed(false)
+    setProgress({ stage: "verify", message: "Checking process identity and the reviewed configuration…", warnings: false })
     setBusy(true)
     try {
-      setResult(await adoptApply(group.key, label, options, xml))
+      setResult(await adoptApply(group.key, label, options, xml, setProgress))
       done()
     } catch (e) {
       setError(String(e))
+      setApplyFailed(true)
+      done()
     } finally {
+      applying.current = false
       setBusy(false)
     }
   }
+  const steps = [
+    ["verify", "Verify"], ["write", "Save plist"], ["load", "Load"],
+    ["ready", "Readiness"], ...(options.stop_copies ? [["stop", "Stop originals"]] : []),
+  ]
+  const completed = result ? steps.length : Math.max(0, steps.findIndex(([stage]) => stage === (progress?.stage === "rollback" ? "ready" : progress?.stage)))
+  const failure = error?.split("\n")
   return (
     <Dialog
       open={!!group}
@@ -85,7 +120,7 @@ export function AdoptSheet({
     >
       <DialogContent
         className="h-adopt-sheet"
-        aria-describedby="adopt-description"
+        showCloseButton={!busy}
       >
         <DialogHeader>
           <div className="h-adopt-heading">
@@ -95,12 +130,43 @@ export function AdoptSheet({
               <DialogTitle>{group?.name}</DialogTitle>
             </div>
           </div>
-          <DialogDescription id="adopt-description">
+          <DialogDescription>
             Review the command and generated plist before creating a user
             LaunchAgent.
           </DialogDescription>
         </DialogHeader>
-        <div className="h-sheet-scroll">
+        {progress && (
+          <section className={`h-adopt-progress ${applyFailed ? "is-error" : result && progress.warnings ? "is-warning" : ""}`} aria-label="Adoption progress" aria-busy={busy}>
+            <div className="h-adopt-progress-title" role="status" aria-live="polite">
+              {busy ? <LoaderCircle size={17} className="h-spin" /> : applyFailed || progress.warnings ? <TriangleAlert size={17} /> : <Check size={17} />}
+              <strong>{applyFailed ? "Adoption did not finish" : result ? (progress.warnings ? "Adopted · needs review" : "Launch agent ready") : progress.stage === "rollback" ? "Unloading new agent…" : "Adopting…"}</strong>
+              <span className="h-sub">{elapsed}s elapsed</span>
+            </div>
+            <div className="h-adopt-track" role="progressbar" aria-label="Adoption stages completed" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={completed} aria-valuetext={`${completed} of ${steps.length} stages completed${applyFailed ? "; adoption failed" : ""}`}>
+              <span style={{ width: `${completed / steps.length * 100}%` }} />
+            </div>
+            <ol className="h-adopt-steps">
+              {steps.map(([stage, title], index) => <li key={stage} className={index < completed ? "is-done" : index === completed ? "is-current" : ""} aria-current={busy && index === completed ? "step" : undefined}>{index < completed ? "✓ " : `${index + 1}. `}{title}</li>)}
+            </ol>
+            <p className="h-sub">{applyFailed ? "Review the failure below before trying again." : progress.message}</p>
+          </section>
+        )}
+        <div className="h-sheet-scroll" ref={scroll}>
+          {error && (
+            <div role="alert" className="h-error h-adopt-error">
+              <strong>{failure?.[0]}</strong>
+              {failure && failure.length > 1 && <>
+                <p>{failure[1]}</p>
+                {failure.some((line) => line.startsWith("Plist retained")) && <p>The plist was kept for review. Close this dialog and use Launch job inspector to check the command and logs before trying again.</p>}
+                <details><summary>Technical details & next steps</summary><pre>{failure.slice(2).join("\n")}</pre></details>
+              </>}
+            </div>
+          )}
+          {result && (
+            <div className="h-notice">
+              {result.map((line, i) => <p key={i}>{line}</p>)}
+            </div>
+          )}
           <h3>What’s running now</h3>
           <div className="h-card h-adopt-current">
             <div className="h-wrap">
@@ -178,18 +244,6 @@ export function AdoptSheet({
           <h3>Preview</h3>
           <p className="h-sub h-mono">~/Library/LaunchAgents/{label}.plist</p>
           <pre className="h-code">{xml || "Preparing preview…"}</pre>
-          {error && (
-            <p role="alert" className="h-error">
-              {error}
-            </p>
-          )}
-          {result && (
-            <div className="h-notice">
-              {result.map((line, i) => (
-                <p key={i}>{line}</p>
-              ))}
-            </div>
-          )}
         </div>
         <footer className="h-sheet-footer">
           <p className="h-sub">
@@ -205,7 +259,7 @@ export function AdoptSheet({
               disabled={busy || !xml || !!error}
               onClick={apply}
             >
-              {busy ? "Loading & checking…" : "Adopt & Load"}
+              {busy ? <><LoaderCircle size={14} className="h-spin" /> Adopting…</> : "Adopt & Load"}
             </button>
           )}
         </footer>

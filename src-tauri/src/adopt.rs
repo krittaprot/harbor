@@ -12,6 +12,13 @@ use std::{
 };
 use tauri::State;
 
+#[derive(Debug, Clone, Serialize)]
+pub struct AdoptionProgress {
+    stage: &'static str,
+    message: String,
+    warnings: bool,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Options {
     pub run_at_load: bool,
@@ -165,10 +172,15 @@ pub async fn adopt_apply(
     label: String,
     options: Options,
     expected_xml: String,
+    on_progress: tauri::ipc::Channel<AdoptionProgress>,
     scanner: State<'_, Scanner>,
 ) -> Result<Vec<String>, String> {
     let group = group(&key, &scanner)?;
     tauri::async_runtime::spawn_blocking(move || {
+        let report = |stage, message: String, warnings| {
+            let _ = on_progress.send(AdoptionProgress { stage, message, warnings });
+        };
+        report("verify", "Checking process identity and the reviewed configuration…".into(), false);
         let contents = preview(&group, &label, &options)?;
         if contents != expected_xml { return Err("Process/options changed since preview; review a new preview".into()); }
         if crate::launchctl::list_loaded().map_err(|e| e.to_string())?.iter().any(|j| j.label == label) { return Err("That label is already loaded".into()); }
@@ -177,34 +189,59 @@ pub async fn adopt_apply(
         let path = base.join(format!("{label}.plist"));
         let path_string = path.to_string_lossy().into_owned();
         config::user_plist(&path_string)?;
+        report("write", "Writing and validating the LaunchAgent plist…".into(), false);
         let mut file = std::fs::OpenOptions::new().write(true).create_new(true).open(&path).map_err(|e| e.to_string())?;
         file.write_all(contents.as_bytes()).map_err(|e| e.to_string())?;
         file.sync_all().map_err(|e| e.to_string())?;
         let lint = crate::scan_command::output("/usr/bin/plutil", &["-lint", &path_string]).map_err(|e| e.to_string())?;
         if !lint.status.success() { return Err("Generated plist failed plutil validation; not loaded".into()); }
         if options.logs { std::fs::create_dir_all(dirs::home_dir().unwrap().join("Library/Logs").join(&label)).map_err(|e| e.to_string())?; }
+        report("load", "Asking launchd to load the new agent…".into(), false);
         crate::launchctl::bootstrap(&path_string).map_err(|e| e.to_string())?;
-        let deadline = Instant::now() + Duration::from_secs(15);
+        let readiness_started = Instant::now();
+        report("ready", "Waiting for the new agent to own a listening port (up to 15s)…".into(), false);
+        let deadline = readiness_started + Duration::from_secs(15);
         let mut ready = false;
+        let mut observation = "Waiting for launchd to report a process".to_string();
         while Instant::now() < deadline {
             let loaded = crate::launchctl::list_loaded().map_err(|e| e.to_string())?;
-            if let Some(pid) = loaded.iter().find(|j| j.label == label).and_then(|j| j.pid) {
+            let job = loaded.iter().find(|j| j.label == label);
+            if let Some(pid) = job.and_then(|j| j.pid) {
                 let mut ps = ProcessScanner::default();
                 let table = ps.scan();
                 let mut pids = table.descendants(pid); pids.push(pid);
                 let (ports, _) = crate::ports::scan(&table, unsafe { libc::getuid() });
                 if group.ports.is_empty() || ports.iter().any(|p| pids.contains(&p.pid)) { ready = true; break; }
+                observation = format!("PID {pid} is running; waiting for it or a child to own a listening port");
+            } else {
+                observation = match job.and_then(|j| j.last_exit_code) {
+                    Some(code) => format!("No running PID; last exit code {code}"),
+                    None => "Waiting for launchd to report a process".into(),
+                };
             }
+            report("ready", format!("{observation}. Checking for up to 15s ({}s elapsed).", readiness_started.elapsed().as_secs()), false);
             std::thread::sleep(Duration::from_millis(300));
         }
         if !ready {
+            report("rollback", "Readiness timed out. Unloading the new agent; originals have not been stopped…".into(), false);
             let target = format!("gui/{}/{label}", unsafe { libc::getuid() });
             let diagnostic = crate::scan_command::output("/bin/launchctl", &["print", &target]).ok().map(|o| String::from_utf8_lossy(&o.stdout).into_owned()).unwrap_or_default();
             let rollback = crate::launchctl::bootout(&path_string);
-            return Err(format!("New agent did not become ready. Original processes were not stopped. Plist retained for review. Unload result: {rollback:?}\n{diagnostic}"));
+            let unload = match rollback { Ok(()) => "The new agent was unloaded.".to_string(), Err(e) => format!("Could not unload the new agent: {e}. Inspect it in Services.") };
+            return Err(format!("The new agent did not become ready within 15 seconds.\nOriginal processes were not stopped. {unload}\nLast observation: {observation}.\nPlist retained at {path_string}. Review the command and logs before trying another adoption; this label's plist already exists.\nA fixed port conflict or a command that exits instead of staying in the foreground can prevent readiness.\n\nlaunchctl diagnostics:\n{diagnostic}"));
         }
         let mut results = vec![format!("{label} loaded and ready")];
-        if options.stop_copies { results.extend(group.copies.iter().map(|p| terminate(p).unwrap_or_else(|e| e))); }
+        let mut warnings = false;
+        if options.stop_copies {
+            for (index, process) in group.copies.iter().enumerate() {
+                report("stop", format!("New agent is ready. Stopping original {}/{} (PID {}); allowing up to 5s for exit.", index + 1, group.copies.len(), process.pid), false);
+                match terminate(process) {
+                    Ok(message) => results.push(message),
+                    Err(error) => { warnings = true; results.push(error); }
+                }
+            }
+        }
+        report("complete", if warnings { "Agent ready, but some original copies could not be stopped. Review the results below." } else { "The new launch agent is ready." }.into(), warnings);
         Ok(results)
     }).await.map_err(|e| e.to_string())?
 }

@@ -46,6 +46,28 @@ natural syntax, exact-key compatibility, previews, undo, automatic JSON and term
 Smoke writes used an isolated HOME; actual user preferences were unchanged. Installed CLI
 and both normal app bundles refreshed. Work remains on local `harbor/cli`, not pushed.
 
+## Adoption progress and failure UX (2026-10-15)
+
+Adoption now streams per-invocation Tauri channel updates for verify, plist write, load,
+readiness, optional original-process cleanup, rollback and completion. A fixed panel above
+the scrolling preview shows completed stages (not estimated time percentages), elapsed time,
+readiness observations and per-PID cleanup status. Readiness timeout errors summarize what
+happened, retain rollback results and next steps, and put raw launchctl output in expandable
+diagnostics. Partial cleanup is shown as “Adopted · needs review.” Duplicate submission and
+closing during work are blocked; errors/results scroll into view and refresh inventory.
+
+Verified: 48 frontend tests, 30 Rust unit + 4 CLI contract tests, lint, build and clippy.
+Native owned-fixture adoption verified every channel stage and readiness-before-stop ordering;
+both original fixture processes exited via SIGTERM and the fixture agent/plist were removed.
+Normal release/debug app bundles rebuilt afterward, release signature verified. Browser checks
+covered fixed progress while scrolling, failure diagnostics and 375/768/1100px layouts.
+`docs/verification/harbor-adoption-{progress,failure}.png` are Chromium renders of the built
+UI with mocked adoption progress/failure, not captures of an actual adoption failure.
+
+Owner-reported `com.harbor.opencode.exe` readiness failure remains unresolved: screenshot shows
+last exit 0 and no running PID; both log files were empty. Only read-only log inspection was
+performed. Its retained plist and original process were not changed. Follow-up is in project Todos.
+
 ## Read first
 
 Read `../AGENTS.md`, `../APPS.md`, `docs/PLAN.md`, `docs/PHASE-1.md` and `docs/VERIFICATION.md`.

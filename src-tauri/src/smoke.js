@@ -94,7 +94,13 @@
       const options = {run_at_load:true,keep_alive:false,logs:true,stop_copies:true};
       const label = `com.harbor.smoke.${window.__HARBOR_FIXTURE_PID__}`;
       const expectedXml = await invoke('adopt_preview', {key:target.key,label,options});
-      adoption = await invoke('adopt_apply', {key:target.key,label,options,expectedXml});
+      const progress = [];
+      const channel = transformCallback(event => { if (event.message) progress.push(event.message); });
+      adoption = await invoke('adopt_apply', {key:target.key,label,options,expectedXml,onProgress:`__CHANNEL__:${channel}`});
+      for (let n = 0; n < 20 && !progress.some(p => p.stage === 'complete'); n++) await delay(50);
+      window.__TAURI_INTERNALS__.unregisterCallback(channel);
+      for (const stage of ['verify','write','load','ready','stop','complete']) assert(progress.some(p => p.stage === stage), `adoption progress: ${stage}`);
+      assert(progress.findIndex(p => p.stage === 'ready') < progress.findIndex(p => p.stage === 'stop'), 'readiness before stopping originals');
       assert(adoption.filter(line => line.includes('exited')).length === 2, 'both originals stopped after readiness');
       second = await invoke('rescan_now');
       assert(second.services.some(s => s.jobs.some(j => j.label === label) && s.ports.length > 0 && !s.apple), 'new agent visible as a managed service');

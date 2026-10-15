@@ -981,6 +981,59 @@ button:disabled {
   flex-direction: column;
   gap: 12px;
 }
+.h-adopt-progress {
+  flex-shrink: 0;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--h-sep);
+  background: var(--h-card);
+}
+.h-adopt-progress-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.h-adopt-progress-title > .h-sub { margin-left: auto; }
+.h-adopt-track {
+  height: 6px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--h-sep);
+}
+.h-adopt-track > span {
+  display: block;
+  height: 100%;
+  background: var(--h-blue);
+  transition: width 200ms ease;
+}
+.h-adopt-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 8px;
+  color: var(--h-muted);
+  font-size: 11px;
+}
+.h-adopt-steps .is-current { color: var(--h-text); font-weight: 700; }
+.h-adopt-steps .is-done { color: var(--h-blue); }
+.h-adopt-progress.is-error .h-adopt-track > span { background: var(--h-red); }
+.h-adopt-error { flex-shrink: 0; overflow-wrap: anywhere; }
+.h-adopt-error p { margin: 8px 0; }
+.h-adopt-error summary { cursor: pointer; font-weight: 600; margin-top: 10px; }
+.h-adopt-error pre {
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font: 11px/1.6 var(--font-harbor-mono);
+  margin-top: 8px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .h-adopt-track > span { transition: none; }
+  .h-adopt-progress .h-spin { animation: none; }
+}
 .h-sheet-scroll > h3 {
   font-size: 13px;
   font-weight: 700;

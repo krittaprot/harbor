@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core"
+import { Channel, invoke } from "@tauri-apps/api/core"
 import type {
   Service,
   Snapshot,
@@ -45,12 +45,22 @@ export const adoptPreview = (
   label: string,
   options: AdoptOptions
 ) => invoke<string>("adopt_preview", { key, label, options })
+export type AdoptionProgress = {
+  stage: "verify" | "write" | "load" | "ready" | "stop" | "rollback" | "complete"
+  message: string
+  warnings: boolean
+}
 export const adoptApply = (
   key: string,
   label: string,
   options: AdoptOptions,
-  expectedXml: string
-) => invoke<string[]>("adopt_apply", { key, label, options, expectedXml })
+  expectedXml: string,
+  progress?: (event: AdoptionProgress) => void
+) => {
+  const onProgress = new Channel<AdoptionProgress>()
+  onProgress.onmessage = (event) => progress?.(event)
+  return invoke<string[]>("adopt_apply", { key, label, options, expectedXml, onProgress })
+}
 
 export function uptime(seconds: number | null) {
   if (seconds === null) return "—"
