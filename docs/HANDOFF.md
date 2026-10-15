@@ -2,6 +2,15 @@
 
 Updated 2026-10-15. Harbor's redesigned app and backend features are implemented through phase 10.
 
+## CLI addition (2026-10-15)
+
+Implemented on local branch `harbor/cli`; publication branch remains `harbor/main`.
+`harbor` is installed at `~/.local/bin/harbor`. Run `harbor capabilities --json` to discover
+commands; see `docs/CLI.md` for JSON/exit-code contracts, controls, tests and installation.
+The CLI works without the GUI and shares scanner/grouping/health/operations code with it.
+28 Rust unit tests, three process-contract tests and owned-fixture CLI smoke checks passed.
+Source changes are committed locally; this feature branch has not been pushed.
+
 ## Read first
 
 Read `../AGENTS.md`, `../APPS.md`, `docs/PLAN.md`, `docs/PHASE-1.md` and `docs/VERIFICATION.md`.
@@ -17,7 +26,7 @@ installed bundle, not from builds inside `target/`. Nothing was installed into A
 
 ## Implementation
 
-- Development/default branch `harbor/main`, origin `krittaprot/harbor`, upstream
+- Published default branch `harbor/main`, origin `krittaprot/harbor`, upstream
   `azu/launchd-ui` v1.4.2 (`c98e9b5`). Published as a GitHub fork; no publication PR needed.
 - Persistent scanner retains CPU state, gathers launchd/process/port inventory, groups services,
   caches health checks and system state, emits snapshots, and services explicit rescan requests.

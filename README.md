@@ -19,6 +19,7 @@ and released under the [MIT license](LICENSE).
 - **Menu bar:** pinned services, status indicators and notifications.
 - **Job inspector:** plist editing, scheduling, logs and user-agent controls retained from upstream.
 - System light/dark appearance and a native Harbor app icon.
+- **Agent CLI:** headless inventory, health, logs, snapshots and explicit service controls with versioned JSON.
 
 Harbor runs at user level. System agents and daemons are read-only. Process termination uses
 identity checks and SIGTERM; service and Mac restarts require confirmation.
@@ -55,6 +56,21 @@ the main window keeps Harbor in the menu bar; use Settings → Quit Harbor to ex
 
 Configuration and snapshots live in `~/Library/Application Support/Harbor/`. Open at Login
 uses macOS Automation permission for System Events. Configuration is read again on each scan.
+
+## CLI for agents
+
+```bash
+pnpm cli:install                    # builds and installs ~/.local/bin/harbor
+harbor status --json
+harbor services --json
+harbor health crystal-blood --json
+harbor restart 3things --dry-run --json
+```
+
+The CLI works without the desktop app running. It shares the app's scanner and mutation
+validation. Service changes require `--yes`; `--dry-run` prints the affected jobs. Use
+`harbor capabilities --json` for discovery. See [CLI documentation](docs/CLI.md) for all
+commands, response fields, exit codes and installation options.
 
 ## Development
 

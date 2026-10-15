@@ -5,6 +5,8 @@
   "packageManager": "pnpm@10.28.2",
   "type": "module",
   "scripts": {
+    "cli:build": "cargo build --manifest-path src-tauri/Cargo.toml --release --locked --bin harbor",
+    "cli:install": "sh scripts/install-cli.sh",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint src/ scripts/",
