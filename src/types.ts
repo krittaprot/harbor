@@ -20,6 +20,7 @@ export type Snapshot = {
     inaccessible_pids: number[]
     visibility_limited: boolean
     warnings: string[]
+    inventory_issues?: { code: string; path: string; message: string; guidance: string; detail: string }[]
   }
 }
 

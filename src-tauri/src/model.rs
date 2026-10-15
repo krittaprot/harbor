@@ -140,4 +140,16 @@ pub struct ScanDiagnostics {
     /// Always true: without root, macOS can hide other users' listeners.
     pub visibility_limited: bool,
     pub warnings: Vec<String>,
+    /// Individual plist files skipped during inventory, not service-health failures.
+    #[serde(default)]
+    pub inventory_issues: Vec<InventoryIssue>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InventoryIssue {
+    pub code: String,
+    pub path: String,
+    pub message: String,
+    pub guidance: String,
+    pub detail: String,
 }

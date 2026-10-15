@@ -16,7 +16,7 @@ assert not plist.exists(), "Refuse to reuse an existing plist"
 try:
     ports = [int(child.stdout.readline()) for child in children]
     print(f"Owned fixture PIDs {[c.pid for c in children]}, ports {ports}", flush=True)
-    result = subprocess.run([str(root / "src-tauri/target/debug/launchd-ui")], env={**os.environ, "HARBOR_ADOPT_SMOKE_PID": str(children[0].pid)}, cwd=root)
+    result = subprocess.run([str(root / "src-tauri/target/debug/harbor-app")], env={**os.environ, "HARBOR_ADOPT_SMOKE_PID": str(children[0].pid)}, cwd=root)
     assert result.returncode == 0, f"Native smoke failed: {result.returncode}"
     for child in children:
         code = child.wait(timeout=5)

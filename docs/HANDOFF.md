@@ -2,6 +2,35 @@
 
 Updated 2026-10-15. Harbor's redesigned app and backend features are implemented through phase 10.
 
+## MacBook scan coverage and background name: v1.5.1
+
+Owner screenshot shows Teams' system plist unreadable (OS permission denied) and Java's helper
+plist missing at read time. These paths are absent on the development Mac, so the MacBook's
+underlying files were not changed or asserted repaired. Inventory now preserves typed OS errors
+and emits `diagnostics.inventory_issues` with permission/missing/broken-link/invalid/read-failure
+codes, explanations, guidance and raw details. The UI uses **Scan coverage**, **Copy scan report**
+and expandable details; CLI has the same notes and can diagnose skipped files by path or stem.
+Other files and loaded-job fallback remain visible. Old snapshots default to no inventory issues.
+
+Startup plugin explicitly uses `Harbor`; app metadata sets display/name to Harbor and Tauri's
+main binary is now `harbor-app` (CLI stays `harbor`). An installed app archives its user-owned,
+regular `launchd-ui.plist` only if it has the exact old label/one executable argument for the
+same bundle directory. Symlinks, unrelated apps and custom commands are preserved. The old
+loaded job is not booted out, because that could terminate the app itself; macOS may retain its
+old entry/notification until logout/login. Same-location upgrades avoid duplicate future startup.
+
+Verified: 51 frontend tests; 37 Rust unit + 4 CLI contract tests; 26 release tests; lint, clippy,
+format/version/build checks. Real temporary-HOME CLI fixtures reproduced permission denial,
+dangling symlinks and malformed files. An installed-layout native app in a temporary HOME
+created Harbor.plist pointing to harbor-app and archived the legacy file byte-for-byte; real
+user startup files were unchanged. Built UI dark-mode fixtures verified copy/details and narrow
+layouts; `harbor-scan-coverage.png` uses mocked screenshot-derived diagnostics, not native capture.
+Release notes: `docs/releases/v1.5.1.md`.
+Release/debug bundles rebuilt and local CLI refreshed to 1.5.1. DMG verified and mounted
+read-only; its signed app has Harbor display metadata, only `harbor-app`/`harbor` executables,
+and working CLI inventory. DMG size 8,099,412 bytes; SHA-256
+`37bb1a848171c6f62d7879c3facb341af31fbb78467ee606b2c1f9a4c75f6cac`.
+
 ## First packaged release: v1.5.0 (2026-10-15)
 
 Version bumped consistently across package.json, Cargo.toml, Cargo.lock and tauri.conf.json.

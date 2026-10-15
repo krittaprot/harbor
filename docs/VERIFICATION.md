@@ -55,8 +55,8 @@ Run from the project root, with ProVault mounted. No background dev server is ne
 
 ```bash
 pnpm build
-cargo build --manifest-path src-tauri/Cargo.toml --features smoke-test,tauri/custom-protocol
-src-tauri/target/debug/launchd-ui
+pnpm tauri build --debug --features smoke-test --bundles app
+src-tauri/target/debug/harbor-app
 uv run scripts/render-smoke.py
 ```
 

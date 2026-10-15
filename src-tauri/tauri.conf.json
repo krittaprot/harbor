@@ -1,7 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Harbor",
-  "version": "1.5.0",
+  "mainBinaryName": "harbor-app",
+  "version": "1.5.1",
   "identifier": "com.ode.harbor",
   "build": {
     "frontendDist": "../dist",

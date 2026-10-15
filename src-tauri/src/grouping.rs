@@ -27,9 +27,17 @@ pub fn label_group(label: &str) -> (String, String) {
     (label.into(), "agent".into())
 }
 
-pub fn jobs(loaded: &[LoadedService], warnings: &mut Vec<String>) -> Vec<JobRef> {
+pub fn jobs(loaded: &[LoadedService], issues: &mut Vec<InventoryIssue>) -> Vec<JobRef> {
+    jobs_from_files(plist_util::scan_plist_files(), loaded, issues)
+}
+
+fn jobs_from_files(
+    files: Vec<(String, JobSource)>,
+    loaded: &[LoadedService],
+    issues: &mut Vec<InventoryIssue>,
+) -> Vec<JobRef> {
     let mut result = BTreeMap::new();
-    for (path, source) in plist_util::scan_plist_files() {
+    for (path, source) in files {
         match plist_util::parse_plist(&path) {
             Ok(p) => {
                 let user = source == JobSource::UserAgent;
@@ -90,7 +98,7 @@ pub fn jobs(loaded: &[LoadedService], warnings: &mut Vec<String>) -> Vec<JobRef>
                 };
                 result.insert(p.label, job);
             }
-            Err(e) => warnings.push(format!("plist inventory: {e}")),
+            Err(e) => issues.push(plist_util::inventory_issue(&path, &e)),
         }
     }
     for live in loaded {
@@ -365,6 +373,57 @@ pub fn unmanaged(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn inventory_skips_unreadable_files_without_losing_loaded_jobs() {
+        use std::os::unix::fs::{PermissionsExt, symlink};
+        let dir = tempfile::tempdir().unwrap();
+        let good = dir.path().join("good.plist");
+        std::fs::write(&good, "<?xml version=\"1.0\"?><plist version=\"1.0\"><dict><key>Label</key><string>test.good</string><key>Program</key><string>/usr/bin/true</string></dict></plist>").unwrap();
+        let denied = dir.path().join("denied.plist");
+        std::fs::copy(&good, &denied).unwrap();
+        std::fs::set_permissions(&denied, std::fs::Permissions::from_mode(0o000)).unwrap();
+        let missing = dir.path().join("missing.plist");
+        let broken = dir.path().join("broken.plist");
+        symlink("removed-target.plist", &broken).unwrap();
+        let malformed = dir.path().join("malformed.plist");
+        std::fs::write(&malformed, "not a plist").unwrap();
+        let mut files = vec![good, missing, broken, malformed];
+        // Root can read mode 000; permission behavior is tested on normal-user runs.
+        if unsafe { libc::geteuid() } != 0 {
+            files.push(denied.clone());
+        }
+        let files = files
+            .into_iter()
+            .map(|p| (p.to_string_lossy().into_owned(), JobSource::UserAgent))
+            .collect();
+        let loaded = vec![LoadedService {
+            label: "test.unreadable-but-loaded".into(),
+            pid: Some(42),
+            last_exit_code: None,
+        }];
+        let mut issues = Vec::new();
+        let jobs = jobs_from_files(files, &loaded, &mut issues);
+        assert_eq!(jobs.len(), 2);
+        assert!(jobs.iter().any(|j| j.label == "test.good"));
+        assert!(
+            jobs.iter()
+                .any(|j| j.label == "test.unreadable-but-loaded" && j.pid == Some(42))
+        );
+        for code in ["file_missing", "broken_symlink", "invalid_plist"] {
+            assert!(issues.iter().any(|i| i.code == code), "{code}: {issues:?}");
+        }
+        if unsafe { libc::geteuid() } != 0 {
+            assert!(issues.iter().any(|i| i.code == "permission_denied"));
+        }
+        assert!(
+            issues
+                .iter()
+                .all(|i| !i.guidance.is_empty() && !i.detail.is_empty())
+        );
+        assert!(denied.exists());
+        assert!(std::fs::read_link(dir.path().join("broken.plist")).is_ok());
+        std::fs::set_permissions(denied, std::fs::Permissions::from_mode(0o600)).unwrap();
+    }
     #[test]
     fn label_rules_and_override_patterns() {
         assert_eq!(

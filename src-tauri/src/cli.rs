@@ -880,6 +880,12 @@ fn run_args(args: impl IntoIterator<Item = OsString>) -> u8 {
                 for warning in d.warnings {
                     eprintln!("harbor: warning: {warning}");
                 }
+                for issue in d.inventory_issues {
+                    eprintln!(
+                        "harbor: inventory note [{}]: {} — {}\n  {}",
+                        issue.code, issue.path, issue.message, issue.guidance
+                    );
+                }
             }
             output.exit
         }

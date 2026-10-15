@@ -830,6 +830,10 @@ button:disabled {
   overflow-wrap: anywhere;
   font: 11px var(--font-harbor-mono);
 }
+.h-scan-notes > p { margin-block: 12px; line-height: 1.6; }
+.h-scan-note { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--h-edge); overflow-wrap: anywhere; }
+.h-scan-note p { margin-block: 8px; font-size: 12px; line-height: 1.6; }
+.h-scan-note details { color: var(--h-muted); font-size: 12px; }
 .h-readiness-hero {
   background: var(--h-hero);
   padding: 24px;

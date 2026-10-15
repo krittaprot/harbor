@@ -130,6 +130,13 @@ target command. Archived user plists and saved adoption reports can still be dia
 label. In the app, **Copy report** copies the complete error, context, diagnostics and reviewed
 plist; **Copy plist** copies just the preview. Process rows also have **Copy report**.
 
+From v1.5.1, skipped plist files can also be diagnosed by full path or filename without
+`.plist`. `diagnostics.inventory_issues` contains `code`, `path`, `message`, `guidance` and raw
+`detail`. Codes distinguish `permission_denied`, `file_missing`, `broken_symlink`,
+`invalid_plist` and `plist_read_failed`. These report partial inventory coverage, not failed
+service health. They are separate from scan-level `warnings`. Human output prints inventory
+notes to stderr; JSON remains one response. The app's **Copy scan report** includes both.
+
 `preview adopt` uses the same identity checks and plist generator as the app. Actual adoption
 requires `--yes` and validates the fresh preview again. Defaults: start at login, KeepAlive,
 save logs, leave original copies running. Add `--stop-originals` to both preview and adoption

@@ -82,8 +82,11 @@ pub fn install(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
             }
         })
         .build(app)?;
-    if installed_bundle() && config::load()?.start_at_login {
-        app.autolaunch().enable()?;
+    if installed_bundle() {
+        crate::startup::migrate_legacy()?;
+        if config::load()?.start_at_login {
+            app.autolaunch().enable()?;
+        }
     }
     Ok(())
 }
@@ -153,6 +156,7 @@ pub fn set_settings(
     start_at_login: bool,
 ) -> Result<(), String> {
     if installed_bundle() {
+        crate::startup::migrate_legacy()?;
         if start_at_login {
             app.autolaunch().enable()
         } else {

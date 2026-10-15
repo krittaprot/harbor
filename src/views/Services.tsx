@@ -15,6 +15,7 @@ import {
 import type { Snapshot, Service, UnmanagedGroup } from "@/types"
 import type { Filter } from "@/components/Sidebar"
 import { ServiceTile } from "@/components/ServiceTile"
+import { ScanNotes } from "@/components/ScanNotes"
 import { matchesService, uptime, serviceUrl } from "@/lib/harbor"
 
 export function HealthPill({ service: s }: { service: Service }) {
@@ -574,7 +575,7 @@ export function Services({
               <p>{filter === "attention" && !search ? "No failed jobs, failed health checks or recent restarts detected." : "Try a different name, port or filter."}</p>
             </div>
           )}
-        {s.diagnostics.warnings.length > 0 && <details className="h-card h-extensions"><summary>Scan diagnostics · {s.diagnostics.warnings.length} warnings</summary><pre>{s.diagnostics.warnings.join("\n")}</pre></details>}
+        <ScanNotes diagnostics={s.diagnostics} takenAt={s.taken_at} />
         <p className="h-footer-note">
           {s.counts.hidden} Apple and application jobs hidden by default.{" "}
           <button onClick={() => setFilter("apple")}>

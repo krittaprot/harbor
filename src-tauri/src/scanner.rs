@@ -54,7 +54,7 @@ pub fn collect(processes: &mut ProcessScanner) -> Snapshot {
     let processes: Vec<_> = table.by_pid.into_values().collect();
     #[cfg(feature = "smoke-test")]
     let processes = crate::smoke::isolate_fixture(processes, uid);
-    let jobs = grouping::jobs(&loaded, &mut diagnostics.warnings);
+    let jobs = grouping::jobs(&loaded, &mut diagnostics.inventory_issues);
     let not_loaded = jobs
         .iter()
         .filter(|j| j.editable && j.status == "Unloaded")

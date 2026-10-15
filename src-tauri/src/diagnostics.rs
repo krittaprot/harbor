@@ -115,6 +115,15 @@ fn job_report(snapshot: &Snapshot, label: &str, path: &str) -> Result<Value, Str
 }
 
 pub fn report(snapshot: &Snapshot, target: &str) -> Result<Value, String> {
+    let inventory_issues: Vec<_> = snapshot
+        .diagnostics
+        .inventory_issues
+        .iter()
+        .filter(|issue| {
+            issue.path == target
+                || Path::new(&issue.path).file_stem().and_then(|s| s.to_str()) == Some(target)
+        })
+        .collect();
     let mut jobs = Vec::new();
     let selected: Vec<_> = snapshot
         .services
@@ -134,7 +143,7 @@ pub fn report(snapshot: &Snapshot, target: &str) -> Result<Value, String> {
                 jobs.push(job_report(snapshot, &job.label, path)?);
             }
         }
-    } else if config::label_valid(target) {
+    } else if inventory_issues.is_empty() && config::label_valid(target) {
         for base in [
             plist_util::get_user_agents_dir(),
             plist_util::get_user_agents_dir().join(".harbor-archive"),
@@ -160,7 +169,7 @@ pub fn report(snapshot: &Snapshot, target: &str) -> Result<Value, String> {
         None
     };
     let history = last_adoption(target);
-    if jobs.is_empty() && group.is_none() && history.is_none() {
+    if jobs.is_empty() && group.is_none() && history.is_none() && inventory_issues.is_empty() {
         return Err(format!(
             "No service, job, group or adoption report named '{target}'"
         ));
@@ -171,7 +180,7 @@ pub fn report(snapshot: &Snapshot, target: &str) -> Result<Value, String> {
         .unwrap_or_default();
     Ok(
         json!({"version":env!("CARGO_PKG_VERSION"),"target":target,"taken_at":snapshot.taken_at,"jobs":jobs,"group":group,"findings":group_findings,
-        "last_adoption":history,"scan_diagnostics":snapshot.diagnostics}),
+        "last_adoption":history,"inventory_issues":inventory_issues,"scan_diagnostics":snapshot.diagnostics}),
     )
 }
 
@@ -180,6 +189,31 @@ pub async fn diagnose_target(target: String) -> Result<Value, String> {
     tauri::async_runtime::spawn_blocking(move || report(&crate::scanner::scan_once()?, &target))
         .await
         .map_err(|e| e.to_string())?
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn skipped_plists_can_be_diagnosed_by_path_or_filename_without_a_job() {
+        let mut snapshot = Snapshot::default();
+        let path = "/Library/LaunchDaemons/com.example.unreadable.plist";
+        snapshot
+            .diagnostics
+            .inventory_issues
+            .push(plist_util::inventory_issue(
+                path,
+                &crate::error::AppError::Io(std::io::Error::from(
+                    std::io::ErrorKind::PermissionDenied,
+                )),
+            ));
+        for target in [path, "com.example.unreadable"] {
+            let report = report(&snapshot, target).unwrap();
+            assert_eq!(report["inventory_issues"][0]["code"], "permission_denied");
+            assert_eq!(report["inventory_issues"][0]["path"], path);
+            assert_eq!(report["jobs"].as_array().unwrap().len(), 0);
+        }
+    }
 }
 
 #[tauri::command]

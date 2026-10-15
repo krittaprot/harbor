@@ -20,6 +20,7 @@ mod scanner;
 #[cfg(feature = "smoke-test")]
 mod smoke;
 mod snapshots;
+mod startup;
 mod system;
 mod tray;
 mod types;
@@ -32,6 +33,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(
             tauri_plugin_autostart::Builder::new()
+                .app_name("Harbor")
                 .macos_launcher(tauri_plugin_autostart::MacosLauncher::LaunchAgent)
                 .build(),
         )

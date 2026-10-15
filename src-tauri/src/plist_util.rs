@@ -118,7 +118,12 @@ fn extract_env_vars(dict: &plist::Dictionary) -> Option<HashMap<String, String>>
 }
 
 pub fn parse_plist(path: &str) -> Result<PlistConfig, AppError> {
-    let value = Value::from_file(path).map_err(|e| AppError::Plist(format!("{path}: {e}")))?;
+    // Preserve OS error kinds so inventory can distinguish permissions, missing
+    // files and malformed contents without matching debug strings.
+    let value = Value::from_file(path).map_err(|e| match e.into_io() {
+        Ok(error) => AppError::Io(error),
+        Err(error) => AppError::Plist(format!("{path}: {error}")),
+    })?;
     let dict = value
         .as_dictionary()
         .ok_or_else(|| AppError::Plist(format!("{path}: not a dictionary")))?;
@@ -149,6 +154,49 @@ pub fn parse_plist(path: &str) -> Result<PlistConfig, AppError> {
         wake_system: extract_bool(dict, "WakeSystem"),
         raw_xml,
     })
+}
+
+pub fn inventory_issue(path: &str, error: &AppError) -> crate::model::InventoryIssue {
+    use std::io::ErrorKind;
+    let (code, message, guidance) = match error {
+        AppError::Io(e) if e.kind() == ErrorKind::PermissionDenied => (
+            "permission_denied",
+            "macOS denied access to this plist.",
+            "Harbor runs as your normal user. This job's configuration could not be inspected; this does not mean the service failed. If you need to inspect it, ask an administrator to review the file permissions. Do not change permissions just to clear this notice.",
+        ),
+        AppError::Io(e) if e.kind() == ErrorKind::NotFound => {
+            if std::fs::read_link(path).is_ok() {
+                (
+                    "broken_symlink",
+                    "This plist shortcut points to a missing file.",
+                    "This may be a leftover from an app update or uninstall. Rescan first. If it persists, use the owning app's installer or uninstaller to repair or remove the leftover. Harbor has not removed it.",
+                )
+            } else {
+                (
+                    "file_missing",
+                    "This plist was no longer available when Harbor tried to read it.",
+                    "An app may have moved or removed it during the scan. Rescan; if it keeps appearing, check the owning app's installation. The job's configuration is unknown.",
+                )
+            }
+        }
+        AppError::Plist(_) => (
+            "invalid_plist",
+            "This file could not be read as a launchd plist.",
+            "The configuration may be malformed or unsupported. Review the technical details and repair it through the owning app before trying to load it.",
+        ),
+        _ => (
+            "plist_read_failed",
+            "Harbor could not inspect this plist.",
+            "Rescan and review the technical details if the problem persists. Other files were still scanned; this job's configuration is unknown.",
+        ),
+    };
+    crate::model::InventoryIssue {
+        code: code.into(),
+        path: path.into(),
+        message: message.into(),
+        guidance: guidance.into(),
+        detail: error.to_string(),
+    }
 }
 
 pub fn read_raw_plist(path: &str) -> Result<String, AppError> {

@@ -8,7 +8,7 @@ output = root / "docs" / "verification"
 output.mkdir(parents=True, exist_ok=True)
 helper = root / "src-tauri" / "target" / "window-id"
 subprocess.run(["swiftc", str(root / "scripts" / "window-id.swift"), "-o", str(helper)], check=True)
-process = subprocess.Popen([str(root / "src-tauri" / "target" / "debug" / "launchd-ui")], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=root)
+process = subprocess.Popen([str(root / "src-tauri" / "target" / "debug" / "harbor-app")], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=root)
 try:
     for line in process.stdout:
         print(line, end="", flush=True)
