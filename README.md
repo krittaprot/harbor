@@ -4,7 +4,27 @@ A user-level macOS service monitor for mini, based on [azu/launchd-ui](https://g
 
 See [the build plan](docs/PLAN.md) for scope and safety rules. Run commands from the project root. Development runs in the foreground only: `pnpm tauri dev`, then Ctrl-C when finished. No startup service is installed by development.
 
-The upstream job manager is retained while the Harbor scanner is built. System agents and daemons remain read-only.
+Harbor now has its own Services, Open at Login, Restart Readiness and menu-bar interfaces,
+with live process trees, port ownership, health checks and an adoption workflow. The upstream
+job inspector remains available inside service details. System agents and daemons are read-only.
+
+![Harbor Services](docs/verification/harbor-light.png)
+
+## Build and open Harbor
+
+```bash
+pnpm tauri build --bundles app
+open "src-tauri/target/release/bundle/macos/Harbor.app"
+```
+
+Install by copying that bundle to `~/Applications/` or `/Applications/`. The local build is
+ad-hoc signed, not notarized. Start-at-login is enabled by default after launching an installed
+bundle; builds inside `target/` do not register themselves at login. Closing the main window
+keeps Harbor in the menu bar; use Settings → Quit Harbor to exit.
+
+Configuration and snapshots live in `~/Library/Application Support/Harbor/`. Open at Login
+uses macOS Automation permission for System Events. See [verification](docs/VERIFICATION.md)
+for measured results and remaining owner acceptance checks.
 
 ## Upstream documentation
 

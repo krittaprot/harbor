@@ -12,8 +12,20 @@ This file is self-contained. Read it top to bottom before writing code.
 - [ ] Phase 0 visual acceptance: native title, rendered list/details, CSP and tests verified;
   owner visual inspection remains. Implementation is in place.
 - [x] Phase 1 process/socket collectors, persistent scanner, snapshot IPC and native smoke check.
+- [x] Phase 2 grouping/configuration, including crystal-blood and fasting native checks.
+- [x] Phase 3 Services interface, search/filter wiring and rendered-layout review.
+- [x] Phase 4 HTTP/TCP/tunnel health and failed-job state.
+- [x] Phase 5 unmanaged groups and adoption verified on two owned throwaway processes.
+- [ ] Phase 6 implemented; live login inventory and Docker leftover verified. Login switches
+  and archive require owner acceptance on disposable items.
+- [ ] Phase 7 implemented and comparison unit-tested; real reboot acceptance is owner-run.
+- [ ] Phase 8 implemented and popover rendered; installed tray interaction, notifications and
+  login startup require owner acceptance.
+- [x] Phase 9 light/dark styling and generated Harbor app/tray icons.
+- [x] Phase 10 release and normal debug app bundles built.
 
-See `PHASE-1.md` for the incremental contract, measured results and owner decisions.
+See `PHASE-1.md` for the incremental contract and owner decisions, and `VERIFICATION.md`
+for the subsequent implementation and acceptance evidence. Original requirements below are preserved.
 
 ---
 
