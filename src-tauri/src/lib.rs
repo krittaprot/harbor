@@ -1,13 +1,38 @@
 mod commands;
 mod error;
 mod launchctl;
+mod model;
 mod plist_util;
+mod ports;
+mod procs;
+mod scan_command;
+mod scanner;
+#[cfg(feature = "smoke-test")]
+mod smoke;
 mod types;
+
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .setup(|app| {
+            app.manage(scanner::Scanner::start(app.handle().clone()));
+            #[cfg(feature = "smoke-test")]
+            smoke::install(app);
+            Ok(())
+        })
+        .on_page_load(|webview, payload| {
+            #[cfg(feature = "smoke-test")]
+            if payload.event() == tauri::webview::PageLoadEvent::Finished {
+                webview
+                    .eval(include_str!("smoke.js"))
+                    .expect("smoke script");
+            }
+            let _ = (webview, payload);
+        })
         .invoke_handler(tauri::generate_handler![
+            commands::get_snapshot,
             commands::list_jobs,
             commands::get_job_detail,
             commands::start_job,
@@ -26,6 +51,11 @@ pub fn run() {
             commands::get_home_dir,
             commands::reveal_in_finder,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            if matches!(event, tauri::RunEvent::Exit) {
+                app.state::<scanner::Scanner>().stop();
+            }
+        });
 }

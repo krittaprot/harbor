@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core"
-import type { JobListEntry, LaunchdJob, PlistConfig } from "@/types"
+import type { JobListEntry, LaunchdJob, PlistConfig, Snapshot } from "@/types"
+
+export const getSnapshot = () => invoke<Snapshot>("get_snapshot")
 
 export const listJobs = () => invoke<JobListEntry[]>("list_jobs")
 

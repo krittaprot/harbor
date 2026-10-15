@@ -5,18 +5,24 @@ use crate::types::PlistConfig;
 use crate::types::{JobListEntry, JobSource, JobStatus, LaunchdJob};
 use std::collections::HashMap;
 
+#[tauri::command]
+pub fn get_snapshot(
+    scanner: tauri::State<'_, crate::scanner::Scanner>,
+) -> Result<crate::model::Snapshot, String> {
+    scanner.snapshot()
+}
+
 fn get_last_run_at(config: &PlistConfig) -> Option<String> {
     let paths = [&config.standard_out_path, &config.standard_error_path];
     let mut latest: Option<u64> = None;
 
     for path in paths.into_iter().flatten() {
-        if let Ok(metadata) = std::fs::metadata(path) {
-            if let Ok(modified) = metadata.modified() {
-                if let Ok(duration) = modified.duration_since(std::time::UNIX_EPOCH) {
-                    let millis = duration.as_secs() * 1000 + u64::from(duration.subsec_millis());
-                    latest = Some(latest.map_or(millis, |prev: u64| prev.max(millis)));
-                }
-            }
+        if let Ok(metadata) = std::fs::metadata(path)
+            && let Ok(modified) = metadata.modified()
+            && let Ok(duration) = modified.duration_since(std::time::UNIX_EPOCH)
+        {
+            let millis = duration.as_secs() * 1000 + u64::from(duration.subsec_millis());
+            latest = Some(latest.map_or(millis, |prev: u64| prev.max(millis)));
         }
     }
 
@@ -238,10 +244,10 @@ pub async fn create_job(label: String, config: PlistConfig) -> Result<String, Ap
         .into_iter()
         .flatten()
     {
-        if let Some(parent) = std::path::Path::new(log_path).parent() {
-            if !parent.exists() {
-                std::fs::create_dir_all(parent)?;
-            }
+        if let Some(parent) = std::path::Path::new(log_path).parent()
+            && !parent.exists()
+        {
+            std::fs::create_dir_all(parent)?;
         }
     }
     let path = agents_dir.join(format!("{label}.plist"));

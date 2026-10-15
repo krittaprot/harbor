@@ -1,4 +1,36 @@
 export type JobSource = "UserAgent" | "SystemAgent" | "SystemDaemon"
+
+/** Phase 1 raw inventory; service grouping and health arrive in later phases. */
+export type Snapshot = {
+  taken_at: string
+  uid: number
+  processes: ProcInfo[]
+  ports: PortInfo[]
+  listening_port_count: number
+  diagnostics: {
+    duration_ms: number
+    libproc_listener_count: number
+    lsof_listener_count: number
+    inaccessible_pids: number[]
+    visibility_limited: boolean
+    warnings: string[]
+  }
+}
+
+export type ProcInfo = {
+  pid: number
+  ppid: number
+  uid: number | null
+  name: string
+  argv: string[]
+  cwd: string | null
+  cpu: number | null
+  mem_bytes: number
+  started_at: string | null
+  launchd_label: string | null
+}
+
+export type PortInfo = { pid: number; port: number; addr: string }
 export type JobStatus = "Running" | "Loaded" | "Unloaded" | "Unknown"
 
 // Filter values for the source toolbar. "Home" is a virtual filter (a subset of
