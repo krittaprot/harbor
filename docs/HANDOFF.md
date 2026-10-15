@@ -33,6 +33,19 @@ inventory visibility, undo (including a stopped group), unknown-key errors and p
 unrelated settings. Real preferences remained byte-for-byte unchanged. Rust tests and clippy
 passed again; installed CLI and both normal app bundles were refreshed.
 
+## Natural CLI syntax (2026-10-15)
+
+`temporary NAME` accepts case-insensitive exact group names or full keys; `review NAME`
+undoes the preference. Ambiguous names return `ambiguous_target` (exit 2) with candidate keys.
+`preview temporary/review NAME` and `preview start/stop/restart ID` replace dry-run flags in
+the common workflow. Existing flags remain supported; actual service controls still need
+`--yes`. Output defaults to text on a terminal and versioned JSON when piped/captured;
+`--text`/`--json` override it. Human unmanaged inventory is now a readable list.
+Verified 30 Rust unit + 4 process-contract tests, clippy, and installed-CLI smoke checks for
+natural syntax, exact-key compatibility, previews, undo, automatic JSON and terminal text.
+Smoke writes used an isolated HOME; actual user preferences were unchanged. Installed CLI
+and both normal app bundles refreshed. Work remains on local `harbor/cli`, not pushed.
+
 ## Read first
 
 Read `../AGENTS.md`, `../APPS.md`, `docs/PLAN.md`, `docs/PHASE-1.md` and `docs/VERIFICATION.md`.

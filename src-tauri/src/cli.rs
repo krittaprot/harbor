@@ -11,7 +11,7 @@ use serde_json::{Value, json};
 use std::os::unix::fs::OpenOptionsExt;
 use std::{
     ffi::OsString,
-    io::{Read, Seek, SeekFrom, Write},
+    io::{IsTerminal, Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
 };
 
@@ -25,9 +25,12 @@ const SCHEMA_VERSION: u8 = 1;
     disable_help_subcommand = true
 )]
 struct Cli {
-    /// Emit exactly one versioned JSON response, including on errors (except --help/--version).
-    #[arg(long, global = true)]
+    /// Force JSON output (automatic when stdout is piped or captured).
+    #[arg(long, global = true, conflicts_with = "text")]
     json: bool,
+    /// Force readable text when piping or capturing output.
+    #[arg(long, global = true)]
+    text: bool,
     /// Run HTTP/TCP health probes. Otherwise health stays NotChecked; `health` always probes.
     #[arg(long, global = true)]
     probe: bool,
@@ -68,7 +71,7 @@ enum Command {
     },
     /// Remember an unmanaged command group as temporary (same as the app checkbox).
     Temporary {
-        /// Exact group key from `unmanaged --json`. Applies to all current/future copies.
+        /// Group name or exact key from `unmanaged`. Applies to current/future copies.
         key: String,
         /// Restore review warnings; also works for remembered groups no longer running.
         #[arg(long)]
@@ -76,6 +79,13 @@ enum Command {
         /// Preview the preference change without saving it.
         #[arg(long)]
         dry_run: bool,
+    },
+    /// Undo a temporary choice and include the group in review warnings again.
+    Review { group: String },
+    /// Preview a preference or service action without changing anything.
+    Preview {
+        #[command(subcommand)]
+        action: PreviewAction,
     },
     /// Probe service health. Exits 1 if any selected service is failed or unhealthy.
     Health { id: Option<String> },
@@ -111,6 +121,96 @@ enum Command {
     Stop(ActionArgs),
     /// Stop then start a service's user jobs. Requires --yes or --dry-run.
     Restart(ActionArgs),
+}
+
+#[derive(Debug, Subcommand)]
+enum PreviewAction {
+    /// Preview marking a group temporary.
+    Temporary { group: String },
+    /// Preview undoing a temporary choice.
+    Review { group: String },
+    /// Preview starting a service.
+    Start { id: String },
+    /// Preview stopping a service.
+    Stop { id: String },
+    /// Preview restarting a service.
+    Restart { id: String },
+}
+
+fn normalize_command(command: Command) -> Command {
+    match command {
+        Command::Review { group } => Command::Temporary {
+            key: group,
+            undo: true,
+            dry_run: false,
+        },
+        Command::Preview { action } => match action {
+            PreviewAction::Temporary { group } => Command::Temporary {
+                key: group,
+                undo: false,
+                dry_run: true,
+            },
+            PreviewAction::Review { group } => Command::Temporary {
+                key: group,
+                undo: true,
+                dry_run: true,
+            },
+            PreviewAction::Start { id } => Command::Start(ActionArgs {
+                id,
+                yes: false,
+                dry_run: true,
+            }),
+            PreviewAction::Stop { id } => Command::Stop(ActionArgs {
+                id,
+                yes: false,
+                dry_run: true,
+            }),
+            PreviewAction::Restart { id } => Command::Restart(ActionArgs {
+                id,
+                yes: false,
+                dry_run: true,
+            }),
+        },
+        other => other,
+    }
+}
+
+fn resolve_group(
+    snapshot: &Snapshot,
+    saved: &[String],
+    target: &str,
+    undo: bool,
+) -> Result<String, CliError> {
+    if snapshot.unmanaged.iter().any(|g| g.key == target)
+        || (undo && saved.iter().any(|k| k == target))
+    {
+        return Ok(target.into());
+    }
+    let matches: Vec<_> = snapshot
+        .unmanaged
+        .iter()
+        .filter(|g| g.name.eq_ignore_ascii_case(target))
+        .collect();
+    match matches.as_slice() {
+        [group] => Ok(group.key.clone()),
+        [] => Err(CliError::new(
+            "not_found",
+            "No matching unmanaged group. Run `harbor unmanaged` for names and keys. Stopped groups require their saved key from temporary_keys.",
+            3,
+        )),
+        _ => Err(CliError::new(
+            "ambiguous_target",
+            format!(
+                "More than one group is named '{target}'. Use an exact key: {}",
+                matches
+                    .iter()
+                    .map(|g| g.key.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+            2,
+        )),
+    }
 }
 
 #[derive(Debug, Args)]
@@ -276,7 +376,9 @@ fn capabilities() -> Value {
         .map(|c| json!({"name":c.get_name(),"description":c.get_about().map(|a| a.to_string())}))
         .collect();
     json!({"name":"harbor","version":env!("CARGO_PKG_VERSION"),"schema_version":SCHEMA_VERSION,"platform":"macos",
-        "gui_required":false,"commands":commands,"mutating_commands":["start --yes","stop --yes","restart --yes","snapshot --save","temporary"],
+        "gui_required":false,"commands":commands,"mutating_commands":["start --yes","stop --yes","restart --yes","snapshot --save","temporary","review"],
+        "output_default":"text in a terminal; JSON when piped or captured","text_flags":["--text"],
+        "examples":["harbor unmanaged","harbor temporary figma-console-mcp","harbor review figma-console-mcp","harbor preview temporary figma-console-mcp","harbor preview restart 3things"],
         "json_flags":["--json"],"exit_codes":{"0":"success","1":"operation failed or unhealthy health result","2":"usage or confirmation required","3":"target not found","4":"operation refused"},
         "notes":["Process CPU is null in single-shot inventory.","Health is NotChecked unless --probe or the health command is used.","Non-root inventory can be incomplete; inspect diagnostics.","A successful service action means launchctl accepted it, not that the service became healthy."]})
 }
@@ -361,31 +463,88 @@ fn execute(cli: &Cli, snapshot: &Snapshot) -> Result<Output, CliError> {
                 .map(|p| json!({"port":p.port,"addr":p.addr,"pid":p.pid,"process":snapshot.processes.iter().find(|process| process.pid == p.pid)})).collect();
             Ok(Output::detail(json!(ports)))
         }
-        Command::Unmanaged { include_apps } => Ok(Output::detail(
-            json!({"unmanaged":snapshot.unmanaged,"app_owned":if *include_apps { Some(&snapshot.app_owned) } else { None },
-                "temporary_keys":crate::config::load().map_err(CliError::operation)?.ignored}),
-        )),
-        Command::Temporary { key, undo, dry_run } => {
-            let config = crate::config::load().map_err(CliError::operation)?;
-            let group = snapshot.unmanaged.iter().find(|g| &g.key == key);
-            if group.is_none() && !(*undo && config.ignored.contains(key)) {
-                return Err(CliError::new(
-                    "not_found",
-                    "No matching unmanaged group. Use the exact key from `harbor unmanaged --json` (temporary_keys also lists remembered groups for --undo).",
-                    3,
+        Command::Unmanaged { include_apps } => {
+            let saved = crate::config::load().map_err(CliError::operation)?.ignored;
+            let mut lines = vec![format!(
+                "{:<28} {:<12} {:<8} PORTS",
+                "GROUP", "STATUS", "COPIES"
+            )];
+            for group in snapshot
+                .unmanaged
+                .iter()
+                .chain(snapshot.app_owned.iter().filter(|_| *include_apps))
+            {
+                let status = if group.app_path.is_some() {
+                    "App-owned"
+                } else if group.verdict == "Expected" {
+                    "Temporary"
+                } else {
+                    &group.verdict
+                };
+                let ports = group
+                    .ports
+                    .iter()
+                    .map(|p| p.port)
+                    .collect::<std::collections::BTreeSet<_>>()
+                    .into_iter()
+                    .map(|p| p.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",");
+                lines.push(format!(
+                    "{:<28} {:<12} {:<8} {}\n  key: {}",
+                    group.name,
+                    status,
+                    group.copies.len(),
+                    ports,
+                    group.key
                 ));
             }
-            let temporary = !undo;
-            let changed = config.ignored.contains(key) != temporary;
-            if !dry_run && changed {
-                crate::config::set_temporary(key, temporary).map_err(CliError::operation)?;
+            for key in saved
+                .iter()
+                .filter(|key| !snapshot.unmanaged.iter().any(|g| &g.key == *key))
+            {
+                lines.push(format!("Saved temporary (not running): {key}"));
             }
-            Ok(Output::detail(json!({
-                "key":key,"temporary":temporary,"previous_temporary":config.ignored.contains(key),
-                "dry_run":dry_run,"changed":!dry_run && changed,"would_change":changed,
-                "running_copies":group.map_or(0, |g| g.copies.len()),
-                "scope":"all current and future copies of this command group"
-            })))
+            lines.push("\nUse: harbor temporary <group> · harbor review <group> · harbor preview temporary <group>".into());
+            Ok(Output::new(
+                json!({"unmanaged":snapshot.unmanaged,"app_owned":if *include_apps { Some(&snapshot.app_owned) } else { None },"temporary_keys":saved}),
+                lines.join("\n"),
+            ))
+        }
+        Command::Temporary { key, undo, dry_run } => {
+            let config = crate::config::load().map_err(CliError::operation)?;
+            let key = resolve_group(snapshot, &config.ignored, key, *undo)?;
+            let group = snapshot.unmanaged.iter().find(|g| g.key == key);
+            let temporary = !undo;
+            let changed = config.ignored.contains(&key) != temporary;
+            if !dry_run && changed {
+                crate::config::set_temporary(&key, temporary).map_err(CliError::operation)?;
+            }
+            let name = group.map_or(key.as_str(), |g| g.name.as_str());
+            let state = if temporary {
+                "temporary"
+            } else {
+                "included in review warnings"
+            };
+            let text = if *dry_run {
+                format!("Preview: {name} would be {state}. Nothing saved.")
+            } else if changed {
+                format!("{name} is now {state}.")
+            } else {
+                format!("{name} is already {state}.")
+            };
+            Ok(Output::new(
+                json!({
+                    "key":key,"temporary":temporary,"previous_temporary":config.ignored.contains(&key),
+                    "dry_run":dry_run,"changed":!dry_run && changed,"would_change":changed,
+                    "running_copies":group.map_or(0, |g| g.copies.len()),
+                    "scope":"all current and future copies of this command group"
+                }),
+                format!("{text}\nApplies to all current and future copies of this command group."),
+            ))
+        }
+        Command::Review { .. } | Command::Preview { .. } => {
+            unreachable!("commands normalized before execution")
         }
         Command::Health { id } => {
             let selected: Vec<_> = if let Some(id) = id {
@@ -521,11 +680,10 @@ pub fn run() -> u8 {
 
 fn run_args(args: impl IntoIterator<Item = OsString>) -> u8 {
     let args: Vec<_> = args.into_iter().collect();
-    let json_output = args
-        .iter()
-        .take_while(|a| *a != "--")
-        .any(|a| a == "--json");
-    let cli = match Cli::try_parse_from(args) {
+    let flags: Vec<_> = args.iter().take_while(|a| *a != "--").collect();
+    let json_output = flags.iter().any(|a| *a == "--json")
+        || (!std::io::stdout().is_terminal() && !flags.iter().any(|a| *a == "--text"));
+    let mut cli = match Cli::try_parse_from(args) {
         Ok(cli) => cli,
         Err(error) => {
             if matches!(
@@ -539,6 +697,8 @@ fn run_args(args: impl IntoIterator<Item = OsString>) -> u8 {
             return 2;
         }
     };
+    cli.json = cli.json || (!cli.text && !std::io::stdout().is_terminal());
+    cli.command = normalize_command(cli.command);
     let result = (|| {
         validate_action_request(&cli.command)?;
         if matches!(cli.command, Command::Capabilities) {
@@ -601,6 +761,49 @@ fn run_args(args: impl IntoIterator<Item = OsString>) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn natural_previews_cannot_apply_and_names_must_be_unambiguous() {
+        for action in ["start", "stop", "restart"] {
+            let cli = Cli::try_parse_from(["harbor", "preview", action, "demo"]).unwrap();
+            let command = normalize_command(cli.command);
+            let (args, _) = action_args(&command).unwrap();
+            assert!(args.dry_run && !args.yes);
+            assert!(validate_action_request(&command).is_ok());
+            assert!(Cli::try_parse_from(["harbor", "preview", action, "demo", "--yes"]).is_err());
+        }
+        let group = |key: &str| crate::model::UnmanagedGroup {
+            key: key.into(),
+            name: "worker".into(),
+            copies: vec![],
+            ports: vec![],
+            verdict: "Unknown".into(),
+            app_path: None,
+            hint: None,
+        };
+        let mut snapshot = Snapshot {
+            unmanaged: vec![group("/one|worker.js")],
+            ..Default::default()
+        };
+        assert_eq!(
+            resolve_group(&snapshot, &[], "WORKER", false).unwrap(),
+            "/one|worker.js"
+        );
+        snapshot.unmanaged.push(group("/two|worker.js"));
+        assert_eq!(
+            resolve_group(&snapshot, &[], "worker", false)
+                .unwrap_err()
+                .code,
+            "ambiguous_target"
+        );
+        assert_eq!(
+            resolve_group(&snapshot, &[], "/two|worker.js", false).unwrap(),
+            "/two|worker.js"
+        );
+        let saved = vec!["stopped-key".into()];
+        assert!(resolve_group(&snapshot, &saved, "stopped-key", true).is_ok());
+        assert!(resolve_group(&snapshot, &saved, "stopped-key", false).is_err());
+    }
+
     #[test]
     fn confirmation_is_required_and_dry_run_cannot_be_combined_with_yes() {
         let cli = Cli::try_parse_from(["harbor", "restart", "demo"]).unwrap();

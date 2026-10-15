@@ -36,16 +36,20 @@ cargo build --manifest-path src-tauri/Cargo.toml --release --locked --bin harbor
 ## Agent quick start
 
 ```bash
-harbor capabilities --json
-harbor status --json
-harbor services --json
-harbor services --kind web --json
-harbor show crystal-blood --json
-harbor ports --port 5432 --json
-harbor unmanaged --include-apps --json
-harbor health crystal-blood --json
-harbor readiness --json
+harbor capabilities
+harbor status
+harbor services
+harbor services --kind web
+harbor show crystal-blood
+harbor ports --port 5432
+harbor unmanaged
+harbor health crystal-blood
+harbor readiness
 ```
+
+Output is readable text in an interactive terminal and automatically versioned JSON when
+stdout is piped or captured by an agent. No output flag is needed for normal use. `--json`
+forces JSON in a terminal; `--text` forces readable output in a pipe. Help/version stay text.
 
 Use the exact service `id` from `services` for subsequent commands. `services --search TEXT`
 matches names, IDs, labels, ports and process command lines; it is discovery, not an exact ID
@@ -75,19 +79,24 @@ choice. This preference does not create a LaunchAgent or stop any process.
 Agents can make the same choice through the CLI:
 
 ```bash
-harbor unmanaged --json
-harbor temporary "<exact group key>" --dry-run --json
-harbor temporary "<exact group key>" --json
-harbor temporary "<exact group key>" --undo --json
+harbor unmanaged
+harbor preview temporary figma-console-mcp
+harbor temporary figma-console-mcp
+harbor review figma-console-mcp
+harbor preview review figma-console-mcp
 ```
 
-Copy the exact `key` from `data.unmanaged` and quote it (keys often contain `|` and paths).
+Use the group name from `unmanaged` (case-insensitive exact match). If multiple groups have
+that name, the command returns `ambiguous_target` with exit 2 and asks for an exact key;
+it never chooses one arbitrarily. Exact keys still work; quote them because they often contain
+`|` and paths. `review` undoes the temporary choice; `preview` never saves it.
 This reversible preference needs no `--yes`; the command explicitly sets it, rather than
 toggling it, so repeating it is safe. Output reports `temporary`, `previous_temporary`,
 `changed`, `would_change`, `dry_run`, and the number of `running_copies`. The app reflects the
 choice on its next scan. `data.temporary_keys` lists saved choices, including stopped groups;
-`--undo` accepts those keys too. Unknown keys return `not_found` with exit 3. Marking a new
+`review` accepts those exact keys too. Unknown targets return `not_found` with exit 3. Marking a new
 group requires it to be present in unmanaged inventory. No health probe runs unless requested.
+Existing `temporary KEY --undo`, `--dry-run` and `--json` invocations remain supported.
 
 ## Logs and login apps
 
@@ -108,7 +117,7 @@ desktop's saved login-path cache.
 ## Service controls
 
 ```bash
-harbor restart 3things --dry-run --json
+harbor preview restart 3things
 harbor restart 3things --yes --json
 harbor stop 3things --yes --json
 harbor start 3things --yes --json
@@ -119,6 +128,9 @@ These commands never prompt on stdin. Without `--yes` or `--dry-run`, they retur
 `--yes` and `--dry-run` are mutually exclusive. Dry runs validate user-agent paths/labels
 and return the affected jobs. Actual actions revalidate through the same implementation
 used by the desktop's confirmation dialog. Services containing read-only jobs are refused.
+`harbor preview start NAME`, `preview stop NAME`, and `preview restart NAME` are natural
+equivalents of the corresponding `--dry-run` commands. Actual start/stop/restart still require
+`--yes`.
 
 Jobs start in dependency order (Postgres, other jobs, tunnels) and stop in reverse order.
 `start` bootstraps unloaded jobs; already-loaded jobs are skipped. `restart` unloads then
@@ -142,7 +154,8 @@ their recovery. No command here restarts the machine.
 
 ## JSON contract and exit codes
 
-With `--json` (before or after the command), stdout contains exactly one JSON object. No
+When stdout is piped/captured, or with `--json` (before or after the command), stdout contains
+exactly one JSON object. No
 progress messages or ANSI formatting are mixed into it. Help/version requests remain text.
 
 Success:

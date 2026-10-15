@@ -61,15 +61,18 @@ uses macOS Automation permission for System Events. Configuration is read again 
 
 ```bash
 pnpm cli:install                    # builds and installs ~/.local/bin/harbor
-harbor status --json
-harbor services --json
-harbor health crystal-blood --json
-harbor restart 3things --dry-run --json
+harbor status
+harbor services
+harbor health crystal-blood
+harbor preview restart 3things
+harbor temporary figma-console-mcp
+harbor review figma-console-mcp
 ```
 
 The CLI works without the desktop app running. It shares the app's scanner and mutation
 validation. Service changes require `--yes`; `--dry-run` prints the affected jobs. Use
-`harbor capabilities --json` for discovery. See [CLI documentation](docs/CLI.md) for all
+`harbor capabilities` for discovery. Output is readable in a terminal and automatically JSON
+when captured by an agent or piped. See [CLI documentation](docs/CLI.md) for all
 commands, response fields, exit codes and installation options.
 
 ## Development

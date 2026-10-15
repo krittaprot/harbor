@@ -38,6 +38,19 @@ fn capabilities_are_discoverable_without_opening_the_app() {
 }
 
 #[test]
+fn captured_output_is_json_without_flags_including_errors() {
+    assert_eq!(run(&["capabilities"], 0)["ok"], true);
+    assert_eq!(run(&["unknown-command"], 2)["error"]["code"], "usage");
+    let output = Command::new(env!("CARGO_BIN_EXE_harbor"))
+        .args(["restart", "unused", "--text"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(2));
+    assert!(output.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&output.stderr).starts_with("harbor: confirmation_required:"));
+}
+
+#[test]
 fn invalid_requests_have_structured_nonzero_results() {
     for args in [
         vec!["--json", "unknown-command"],
