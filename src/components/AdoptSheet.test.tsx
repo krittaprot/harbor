@@ -36,8 +36,17 @@ it("keeps progress visible, prevents duplicate submission, and summarizes rollba
   expect(screen.getByRole("alert")).toHaveTextContent("Original processes were not stopped")
   expect(screen.getByText("Technical details & next steps").closest("details")).not.toHaveAttribute("open")
   expect(screen.getByRole("button", { name: "Cancel" })).toBeEnabled()
+  expect(screen.getByRole("button", { name: "Retry adoption" })).toBeEnabled()
   expect(adoptApply).toHaveBeenCalledTimes(1)
   expect(done).toHaveBeenCalledTimes(1)
+})
+
+it("blocks adoption when the preview detects a different existing plist", async () => {
+  vi.mocked(adoptPreview).mockRejectedValue("A different LaunchAgent already exists for this label.\nNothing was overwritten. Choose another label.")
+  render(<AdoptSheet group={group} close={vi.fn()} done={vi.fn()} />)
+  expect(await screen.findByRole("alert")).toHaveTextContent("Nothing was overwritten")
+  expect(screen.getByRole("button", { name: "Adopt & Load" })).toBeDisabled()
+  expect(adoptApply).not.toHaveBeenCalled()
 })
 
 it("distinguishes a ready agent with original-process cleanup warnings from full success", async () => {

@@ -256,10 +256,10 @@ export function AdoptSheet({
           {!result && (
             <button
               className="h-button h-primary"
-              disabled={busy || !xml || !!error}
+              disabled={busy || !xml || (!!error && !applyFailed)}
               onClick={apply}
             >
-              {busy ? <><LoaderCircle size={14} className="h-spin" /> Adopting…</> : "Adopt & Load"}
+              {busy ? <><LoaderCircle size={14} className="h-spin" /> Adopting…</> : applyFailed ? "Retry adoption" : "Adopt & Load"}
             </button>
           )}
         </footer>

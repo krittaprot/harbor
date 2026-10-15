@@ -68,6 +68,16 @@ Owner-reported `com.harbor.opencode.exe` readiness failure remains unresolved: s
 last exit 0 and no running PID; both log files were empty. Only read-only log inspection was
 performed. Its retained plist and original process were not changed. Follow-up is in project Todos.
 
+Follow-up: fixed retry failing with “File exists (os error 17).” Preview checks existing plists;
+an identical unloaded file is reused without rewriting it. Different contents are rejected with
+the path and guidance to change the label or inspect the existing job. Existing loaded jobs are
+also rejected with actionable guidance. Symlinks and special files are not reused. Apply failures
+now offer **Retry adoption** while preview conflicts still block submission. Unit tests verify
+file content/inode/mtime preservation, conflicts and symlink rejection. Native owned-fixture
+smoke now loads an agent, unloads it leaving its plist, then successfully retries with that file.
+Verified 49 frontend tests, 31 Rust unit + 4 CLI tests, lint and clippy; normal release/debug
+bundles rebuilt and signed after smoke. The separate OpenCode readiness issue remains open.
+
 ## Read first
 
 Read `../AGENTS.md`, `../APPS.md`, `docs/PLAN.md`, `docs/PHASE-1.md` and `docs/VERIFICATION.md`.

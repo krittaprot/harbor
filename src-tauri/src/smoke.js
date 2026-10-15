@@ -94,6 +94,15 @@
       const options = {run_at_load:true,keep_alive:false,logs:true,stop_copies:true};
       const label = `com.harbor.smoke.${window.__HARBOR_FIXTURE_PID__}`;
       const expectedXml = await invoke('adopt_preview', {key:target.key,label,options});
+      // Leave an identical, unloaded plist behind, like a retained failed attempt.
+      // Only this uniquely named, test-owned agent is loaded/stopped here.
+      const initialChannel = transformCallback(() => {});
+      await invoke('adopt_apply', {key:target.key,label,options:{...options,stop_copies:false},expectedXml,onProgress:`__CHANNEL__:${initialChannel}`});
+      window.__TAURI_INTERNALS__.unregisterCallback(initialChannel);
+      const fixtureJob = (await invoke('list_jobs')).find(j => j.label === label);
+      assert(fixtureJob, 'fixture plist exists after first adoption');
+      await invoke('stop_job', {plistPath:fixtureJob.plist_path});
+      assert(await invoke('adopt_preview', {key:target.key,label,options}) === expectedXml, 'matching retained plist is previewable');
       const progress = [];
       const channel = transformCallback(event => { if (event.message) progress.push(event.message); });
       adoption = await invoke('adopt_apply', {key:target.key,label,options,expectedXml,onProgress:`__CHANNEL__:${channel}`});
@@ -101,6 +110,7 @@
       window.__TAURI_INTERNALS__.unregisterCallback(channel);
       for (const stage of ['verify','write','load','ready','stop','complete']) assert(progress.some(p => p.stage === stage), `adoption progress: ${stage}`);
       assert(progress.findIndex(p => p.stage === 'ready') < progress.findIndex(p => p.stage === 'stop'), 'readiness before stopping originals');
+      assert(progress.some(p => p.message.includes('Reusing the identical retained plist')), 'retry reused the matching plist');
       assert(adoption.filter(line => line.includes('exited')).length === 2, 'both originals stopped after readiness');
       second = await invoke('rescan_now');
       assert(second.services.some(s => s.jobs.some(j => j.label === label) && s.ports.length > 0 && !s.apple), 'new agent visible as a managed service');
