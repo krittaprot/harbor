@@ -7,6 +7,14 @@ apps that open at login, and whether it is safe to restart. It is a fork of
 
 This file is self-contained. Read it top to bottom before writing code.
 
+## Continuation progress (2026-10-15)
+
+- [ ] Phase 0 visual acceptance: native title, rendered list/details, CSP and tests verified;
+  owner visual inspection remains. Implementation is in place.
+- [x] Phase 1 process/socket collectors, persistent scanner, snapshot IPC and native smoke check.
+
+See `PHASE-1.md` for the incremental contract, measured results and owner decisions.
+
 ---
 
 ## 0. Ground rules (from the owner — do not break these)
