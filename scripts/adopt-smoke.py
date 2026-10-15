@@ -1,6 +1,7 @@
 """Foreground native adoption test; only its own throwaway processes/label are changed."""
 from pathlib import Path
 import os
+import json
 import plistlib
 import subprocess
 import sys
@@ -35,4 +36,8 @@ finally:
         if child.poll() is None:
             child.terminate() # Owned unreaped direct child with the argv above.
             child.wait(timeout=5)
+    report = Path.home() / f"Library/Application Support/Harbor/adoptions/{label}.json"
+    if report.exists():
+        assert json.loads(report.read_text())["label"] == label
+        report.unlink()
     print("Owned fixture processes and plist cleaned up", flush=True)

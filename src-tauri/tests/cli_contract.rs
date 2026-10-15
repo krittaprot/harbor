@@ -69,4 +69,19 @@ fn mutations_never_implicitly_confirm_or_prompt() {
     assert_eq!(value["error"]["code"], "confirmation_required");
     let value = run(&["restart", "unused", "--yes", "--dry-run", "--json"], 2);
     assert_eq!(value["error"]["code"], "usage");
+    let value = run(&["adopt", "unused", "as", "com.harbor.never-create"], 2);
+    assert_eq!(value["error"]["code"], "confirmation_required");
+    let value = run(&["archive", "com.harbor.never-archive"], 2);
+    assert_eq!(value["error"]["code"], "confirmation_required");
+    let value = run(
+        &[
+            "preview",
+            "adopt",
+            "unused",
+            "wrong-word",
+            "com.harbor.test",
+        ],
+        2,
+    );
+    assert_eq!(value["error"]["code"], "usage");
 }

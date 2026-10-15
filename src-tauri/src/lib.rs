@@ -2,6 +2,7 @@ mod adopt;
 pub mod cli;
 mod commands;
 mod config;
+mod diagnostics;
 mod error;
 mod grouping;
 mod harbor_commands;
@@ -10,6 +11,7 @@ mod launchctl;
 mod login;
 mod model;
 mod operations;
+mod ownership;
 mod plist_util;
 mod ports;
 mod procs;
@@ -74,6 +76,8 @@ pub fn run() {
             adopt::adopt_preview,
             adopt::adopt_apply,
             adopt::stop_unmanaged,
+            diagnostics::diagnose_target,
+            diagnostics::copy_text,
             login::list_login_items,
             login::set_login_item,
             snapshots::save_snapshot,

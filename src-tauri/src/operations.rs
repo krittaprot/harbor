@@ -5,6 +5,28 @@ use crate::{
 };
 use serde::Serialize;
 
+pub fn archive_plist(path: &str, dry_run: bool) -> Result<String, String> {
+    let source = config::user_plist(path)?;
+    let plist = crate::plist_util::parse_plist(path).map_err(|e| e.to_string())?;
+    if launchctl::list_loaded()
+        .map_err(|e| e.to_string())?
+        .iter()
+        .any(|j| j.label == plist.label)
+    {
+        return Err("Only unloaded agents can be archived".into());
+    }
+    let archive = crate::plist_util::get_user_agents_dir().join(".harbor-archive");
+    let destination = archive.join(source.file_name().ok_or("Missing filename")?);
+    if destination.exists() {
+        return Err("An archived plist already has that name".into());
+    }
+    if !dry_run {
+        std::fs::create_dir_all(&archive).map_err(|e| e.to_string())?;
+        std::fs::rename(source, &destination).map_err(|e| e.to_string())?;
+    }
+    Ok(destination.to_string_lossy().into_owned())
+}
+
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ServiceAction {

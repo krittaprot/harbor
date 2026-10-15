@@ -93,6 +93,12 @@ enum Command {
     Login,
     /// Report restart prerequisites, failed jobs and volume dependencies.
     Readiness,
+    /// Collect a job/service/group diagnostic report, log tails and last adoption attempt.
+    Diagnose { target: String },
+    /// Adopt an unmanaged group as a LaunchAgent. Use `preview adopt` first.
+    Adopt(AdoptArgs),
+    /// Archive an unloaded user job's plist. Requires --yes or `preview archive`.
+    Archive(ActionArgs),
     /// Print a fresh full snapshot; --save explicitly persists a baseline for comparison.
     Snapshot {
         #[arg(long)]
@@ -125,6 +131,10 @@ enum Command {
 
 #[derive(Debug, Subcommand)]
 enum PreviewAction {
+    /// Review a generated LaunchAgent without writing or loading it.
+    Adopt(AdoptSetup),
+    /// Review the destination for an unloaded user job's plist.
+    Archive { id: String },
     /// Preview marking a group temporary.
     Temporary { group: String },
     /// Preview undoing a temporary choice.
@@ -145,6 +155,16 @@ fn normalize_command(command: Command) -> Command {
             dry_run: false,
         },
         Command::Preview { action } => match action {
+            PreviewAction::Adopt(setup) => Command::Adopt(AdoptArgs {
+                setup,
+                yes: false,
+                dry_run: true,
+            }),
+            PreviewAction::Archive { id } => Command::Archive(ActionArgs {
+                id,
+                yes: false,
+                dry_run: true,
+            }),
             PreviewAction::Temporary { group } => Command::Temporary {
                 key: group,
                 undo: false,
@@ -214,6 +234,35 @@ fn resolve_group(
 }
 
 #[derive(Debug, Args)]
+struct AdoptSetup {
+    /// Exact group name or key from `harbor unmanaged`.
+    group: String,
+    #[arg(value_parser = ["as"], value_name = "as")]
+    as_word: String,
+    /// New user LaunchAgent label.
+    label: String,
+    /// Stop original copies only after the new agent becomes ready (SIGTERM only).
+    #[arg(long)]
+    stop_originals: bool,
+    #[arg(long)]
+    no_keep_alive: bool,
+    #[arg(long)]
+    no_login: bool,
+    #[arg(long)]
+    no_logs: bool,
+}
+
+#[derive(Debug, Args)]
+struct AdoptArgs {
+    #[command(flatten)]
+    setup: AdoptSetup,
+    #[arg(long, conflicts_with = "dry_run")]
+    yes: bool,
+    #[arg(long)]
+    dry_run: bool,
+}
+
+#[derive(Debug, Args)]
 struct ActionArgs {
     id: String,
     /// Explicitly authorize the service mutation. There is no interactive prompt.
@@ -255,6 +304,8 @@ struct CliError {
     message: String,
     #[serde(skip)]
     exit: u8,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    details: Option<Value>,
 }
 impl CliError {
     fn new(code: &'static str, message: impl Into<String>, exit: u8) -> Self {
@@ -262,6 +313,7 @@ impl CliError {
             code,
             message: message.into(),
             exit,
+            details: None,
         }
     }
     fn operation(message: String) -> Self {
@@ -357,9 +409,14 @@ fn action_args(command: &Command) -> Option<(&ActionArgs, ServiceAction)> {
 }
 
 fn validate_action_request(command: &Command) -> Result<(), CliError> {
-    if let Some((args, _)) = action_args(command)
-        && !args.yes
-        && !args.dry_run
+    let authorization = match command {
+        Command::Adopt(args) => Some((args.yes, args.dry_run)),
+        Command::Archive(args) => Some((args.yes, args.dry_run)),
+        _ => action_args(command).map(|(args, _)| (args.yes, args.dry_run)),
+    };
+    if let Some((yes, dry_run)) = authorization
+        && !yes
+        && !dry_run
     {
         return Err(CliError::new(
             "confirmation_required",
@@ -376,7 +433,7 @@ fn capabilities() -> Value {
         .map(|c| json!({"name":c.get_name(),"description":c.get_about().map(|a| a.to_string())}))
         .collect();
     json!({"name":"harbor","version":env!("CARGO_PKG_VERSION"),"schema_version":SCHEMA_VERSION,"platform":"macos",
-        "gui_required":false,"commands":commands,"mutating_commands":["start --yes","stop --yes","restart --yes","snapshot --save","temporary","review"],
+        "gui_required":false,"commands":commands,"mutating_commands":["start --yes","stop --yes","restart --yes","adopt --yes","archive --yes","snapshot --save","temporary","review"],
         "output_default":"text in a terminal; JSON when piped or captured","text_flags":["--text"],
         "examples":["harbor unmanaged","harbor temporary figma-console-mcp","harbor review figma-console-mcp","harbor preview temporary figma-console-mcp","harbor preview restart 3things"],
         "json_flags":["--json"],"exit_codes":{"0":"success","1":"operation failed or unhealthy health result","2":"usage or confirmation required","3":"target not found","4":"operation refused"},
@@ -498,6 +555,9 @@ fn execute(cli: &Cli, snapshot: &Snapshot) -> Result<Output, CliError> {
                     ports,
                     group.key
                 ));
+                if let Some(hint) = &group.hint {
+                    lines.push(format!("  {hint}"));
+                }
             }
             for key in saved
                 .iter()
@@ -515,6 +575,13 @@ fn execute(cli: &Cli, snapshot: &Snapshot) -> Result<Output, CliError> {
             let config = crate::config::load().map_err(CliError::operation)?;
             let key = resolve_group(snapshot, &config.ignored, key, *undo)?;
             let group = snapshot.unmanaged.iter().find(|g| g.key == key);
+            if !undo && group.is_some_and(|g| g.verdict == "Managed") {
+                return Err(CliError::new(
+                    "refused",
+                    "This group is already managed by its application and excluded from missing-agent warnings. Use diagnose to inspect its lifecycle.",
+                    4,
+                ));
+            }
             let temporary = !undo;
             let changed = config.ignored.contains(&key) != temporary;
             if !dry_run && changed {
@@ -566,6 +633,71 @@ fn execute(cli: &Cli, snapshot: &Snapshot) -> Result<Output, CliError> {
             crate::login::inspect(&snapshot.processes).map_err(CliError::operation)?
         ))),
         Command::Readiness => Ok(Output::detail(readiness(snapshot))),
+        Command::Diagnose { target } => Ok(Output::detail(
+            crate::diagnostics::report(snapshot, target)
+                .map_err(|e| CliError::new("diagnosis_failed", e, 1))?,
+        )),
+        Command::Archive(args) => {
+            let job = snapshot
+                .services
+                .iter()
+                .flat_map(|s| &s.jobs)
+                .find(|j| j.label == args.id)
+                .ok_or_else(|| {
+                    CliError::new(
+                        "not_found",
+                        "Use an exact job label from services or show",
+                        3,
+                    )
+                })?;
+            let path = job
+                .plist_path
+                .as_ref()
+                .ok_or_else(|| CliError::new("not_found", "Job has no plist", 3))?;
+            let destination = operations::archive_plist(path, args.dry_run)
+                .map_err(|e| CliError::new("refused", e, 4))?;
+            Ok(Output::detail(
+                json!({"label":args.id,"source":path,"destination":destination,"dry_run":args.dry_run,"archived":!args.dry_run}),
+            ))
+        }
+        Command::Adopt(args) => {
+            let setup = &args.setup;
+            let key = resolve_group(snapshot, &[], &setup.group, false)?;
+            let group = snapshot.unmanaged.iter().find(|g| g.key == key).unwrap();
+            let options = crate::adopt::Options {
+                run_at_load: !setup.no_login,
+                keep_alive: !setup.no_keep_alive,
+                logs: !setup.no_logs,
+                stop_copies: setup.stop_originals,
+            };
+            let xml = crate::adopt::preview_group(group, &setup.label, &options)
+                .map_err(|e| CliError::new("refused", e, 4))?;
+            if args.dry_run {
+                return Ok(Output::detail(
+                    json!({"key":key,"label":setup.label,"options":options,"xml":xml,"dry_run":true}),
+                ));
+            }
+            let events = std::cell::RefCell::new(Vec::new());
+            let result = crate::adopt::apply_group(group, &setup.label, &options, &xml, |event| {
+                if !cli.json {
+                    eprintln!("harbor: {}: {}", event.stage, event.message);
+                }
+                events.borrow_mut().push(event);
+            });
+            match result {
+                Ok(results) => Ok(Output::detail(
+                    json!({"key":key,"label":setup.label,"ready":true,"results":results,"progress":events.into_inner(),"dry_run":false}),
+                )),
+                Err(message) => {
+                    let mut error = CliError::new("adoption_failed", message, 1);
+                    let fresh = scanner::scan_once().unwrap_or_else(|_| snapshot.clone());
+                    error.details = Some(
+                        json!({"progress":events.into_inner(),"diagnostics":crate::diagnostics::report(&fresh, &setup.label).ok()}),
+                    );
+                    Err(error)
+                }
+            }
+        }
         Command::Snapshot {
             save,
             include_login,

@@ -60,22 +60,7 @@ pub fn pin_service(id: String, pinned: bool, scanner: State<'_, Scanner>) -> Res
 #[tauri::command]
 pub async fn archive_plist(path: String) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let source = config::user_plist(&path)?;
-        let plist = crate::plist_util::parse_plist(&path).map_err(|e| e.to_string())?;
-        if crate::launchctl::list_loaded()
-            .map_err(|e| e.to_string())?
-            .iter()
-            .any(|j| j.label == plist.label)
-        {
-            return Err("Only unloaded agents can be archived".into());
-        }
-        let archive = crate::plist_util::get_user_agents_dir().join(".harbor-archive");
-        std::fs::create_dir_all(&archive).map_err(|e| e.to_string())?;
-        let destination = archive.join(source.file_name().ok_or("missing filename")?);
-        if destination.exists() {
-            return Err("An archived plist already has that name".into());
-        }
-        std::fs::rename(source, destination).map_err(|e| e.to_string())
+        crate::operations::archive_plist(&path, false).map(|_| ())
     })
     .await
     .map_err(|e| e.to_string())?

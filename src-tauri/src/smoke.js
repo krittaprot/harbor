@@ -111,6 +111,8 @@
       for (const stage of ['verify','write','load','ready','stop','complete']) assert(progress.some(p => p.stage === stage), `adoption progress: ${stage}`);
       assert(progress.findIndex(p => p.stage === 'ready') < progress.findIndex(p => p.stage === 'stop'), 'readiness before stopping originals');
       assert(progress.some(p => p.message.includes('Reusing the identical retained plist')), 'retry reused the matching plist');
+      const diagnosis = await invoke('diagnose_target', {target:label});
+      assert(diagnosis.jobs.some(j => j.label === label) && diagnosis.last_adoption.results.length > 0, 'native diagnostic report includes saved adoption');
       assert(adoption.filter(line => line.includes('exited')).length === 2, 'both originals stopped after readiness');
       second = await invoke('rescan_now');
       assert(second.services.some(s => s.jobs.some(j => j.label === label) && s.ports.length > 0 && !s.apple), 'new agent visible as a managed service');

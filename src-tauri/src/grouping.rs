@@ -340,11 +340,15 @@ pub fn unmanaged(
             .ports
             .extend(ports.iter().filter(|s| s.pid == process.pid).cloned());
     }
+    let registration = crate::ownership::opencode_registration();
     for group in groups.values_mut() {
         if config.ignored.contains(&group.key) {
             group.hint = Some("Marked temporary by the user; not expected after restart. Applies to all copies of this command group, including future runs.".into());
         }
-        group.verdict = if group.app_path.is_some() || config.ignored.contains(&group.key) {
+        group.verdict = if registration.as_ref().is_some_and(|r| crate::ownership::registered_group(group, r)) {
+            group.hint = Some("Managed by OpenCode's shared-service lifecycle. Clients start it on demand; use opencode service status. No duplicate LaunchAgent is needed.".into());
+            "Managed"
+        } else if group.app_path.is_some() || config.ignored.contains(&group.key) {
             "Expected"
         } else if group.copies.iter().all(|p| p.ppid == 1) {
             "Orphaned"

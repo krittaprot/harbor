@@ -281,7 +281,7 @@ pub fn update_counts(snapshot: &mut Snapshot) {
         unmanaged: snapshot
             .unmanaged
             .iter()
-            .filter(|g| g.verdict != "Expected")
+            .filter(|g| !["Expected", "Managed"].contains(&g.verdict.as_str()))
             .map(|g| g.copies.len())
             .sum(),
         not_loaded: snapshot.not_loaded.len(),
