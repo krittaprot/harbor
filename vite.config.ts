@@ -13,6 +13,7 @@ export default defineConfig({
     },
   },
   clearScreen: false,
+  build: { rollupOptions: { input: { main: path.resolve(__dirname, "index.html"), popover: path.resolve(__dirname, "popover.html") } } },
   server: {
     port: 5173,
     strictPort: true,

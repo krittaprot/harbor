@@ -1,0 +1,1 @@
+{"date":"2026-10-15","framework":"React + Tauri","design":"docs/design/Main.dc.html","font":"SF Pro Text + SF Mono + SF Pro Rounded","palette":"supplied Harbor light/dark tokens","motion":"minimal CSS transitions","scope":"native macOS app; responsive fallback for narrow previews"}

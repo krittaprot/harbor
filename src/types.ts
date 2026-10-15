@@ -7,6 +7,12 @@ export type Snapshot = {
   processes: ProcInfo[]
   ports: PortInfo[]
   listening_port_count: number
+  services: Service[]
+  unmanaged: UnmanagedGroup[]
+  app_owned: UnmanagedGroup[]
+  not_loaded: JobRef[]
+  system: { hostname: string; boot_time: string | null; filevault_on: boolean | null; provault_mounted: boolean; tailscale_up: boolean | null; uid: number }
+  counts: { healthy: number; attention: number; running: number; unmanaged: number; not_loaded: number; ports: number; hidden: number }
   diagnostics: {
     duration_ms: number
     libproc_listener_count: number
@@ -16,6 +22,23 @@ export type Snapshot = {
     warnings: string[]
   }
 }
+
+export type JobRef = {
+  label: string; role: string; pid: number | null; last_exit: number | null; status: string
+  plist_path: string | null; editable: boolean; apple: boolean; autostart: boolean; scheduled: boolean; missing_executable: boolean
+}
+export type Health = { status: string; code: number | null; ms: number | null; reason: string | null; checked_at: string | null; tunnels: { port: number; ready: boolean; reason: string }[] }
+export type Service = {
+  id: string; name: string; kind: string; icon: string; tint: string; jobs: JobRef[]; processes: ProcInfo[]; ports: PortInfo[]
+  health: Health; state: string; uptime_secs: number | null; depends_on: { path: string; mounted: boolean }[]; pinned: boolean; url: string | null; apple: boolean
+}
+export type UnmanagedGroup = { key: string; name: string; copies: ProcInfo[]; ports: PortInfo[]; verdict: string; app_path: string | null; hint: string | null }
+export type LoginItems = { apps: { name: string; path: string; enabled: boolean; running: boolean }[]; extensions: string }
+export type RestartReport = {
+  before: string; boot_time: string; observed_at: string; came_back: string[]; missing: string[]; new: string[]
+  login_returned: number | null; login_missing: string[] | null; unmanaged_missing: string[]; ports_missing: number[]; seconds_after_first_agent: number | null
+}
+export type HarborSettings = { notifications: boolean; start_at_login: boolean }
 
 export type ProcInfo = {
   pid: number

@@ -1,0 +1,89 @@
+/* Harbor's supplied Main.dc.html design tokens. */
+:root {
+  --h-bg: #f5f5f7;
+  --h-card: #ffffff;
+  --h-sunken: #f9f9fb;
+  --h-sep: #f0f0f3;
+  --h-edge: #dedee3;
+  --h-text: #1d1d1f;
+  --h-muted: #6e6e73;
+  --h-secondary: #3a3a3f;
+  --h-primary: #0071e3;
+  --h-white: #ffffff;
+  --h-fill: #e8e8ed;
+  --h-hover: #dcdce1;
+  --h-sidebar: linear-gradient(180deg, #eeeef3, #e9e9ef);
+  --h-glass: rgba(255, 255, 255, 0.7);
+  --h-ok: #17692f;
+  --h-ok-bg: #e2f6e7;
+  --h-warn: #8f4b00;
+  --h-warn-bg: #ffefd6;
+  --h-bad: #b0201a;
+  --h-bad-bg: #ffe5e3;
+  --h-info-bg: #ebebf0;
+  --h-info: #48484e;
+  --h-blue-bg: #e1eeff;
+  --h-blue: #0058b0;
+  --h-green: #34c759;
+  --h-amber: #ff9f0a;
+  --h-red: #ff3b30;
+  --h-gray: #aeaeb2;
+  --h-wash: linear-gradient(180deg, #fff8ec 0, #ffffff 92px);
+  --h-hero: linear-gradient(135deg, #f2fbf4 0%, #ffffff 45%, #fff7ec 100%);
+  --h-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.07), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --h-tile-shadow:
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.12);
+  --h-anchor-bg: linear-gradient(180deg, #ffffff, #ecedf1);
+  --h-anchor-ink: #14213a;
+  --h-code-bg: #1e1e24;
+  --h-code-text: #e7e7ee;
+  --h-blue-tile: linear-gradient(180deg, #4ba3ff, #0a6cff);
+  --h-orange-tile: linear-gradient(180deg, #ffb340, #ff8a00);
+  --h-indigo-tile: linear-gradient(180deg, #7a78ff, #4f4ce0);
+  --h-green-tile: linear-gradient(180deg, #5edb7d, #28b04a);
+  --h-teal-tile: linear-gradient(180deg, #5ad2e6, #1aa5c2);
+  --h-yellow-tile: linear-gradient(180deg, #ffd84d, #f0b400);
+  --h-pink-tile: linear-gradient(180deg, #ff6f91, #f0306a);
+  --h-purple-tile: linear-gradient(180deg, #cf7df2, #a445d8);
+  --h-graphite-tile: linear-gradient(180deg, #9a9aa0, #6e6e75);
+  --h-red-tile: linear-gradient(180deg, #ff6f61, #e8382b);
+  --h-cyan-tile: linear-gradient(180deg, #64c8ff, #1e9bf0);
+  --font-harbor:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
+    system-ui, sans-serif;
+  --font-harbor-rounded:
+    ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
+  --font-harbor-mono: "SF Mono", ui-monospace, Menlo, monospace;
+  --h-focus: rgba(0, 113, 227, 0.55);
+  --h-switch: #2fb24f;
+}
+.dark {
+  --h-bg: #161618;
+  --h-card: #232326;
+  --h-sunken: #1c1c1f;
+  --h-sep: rgba(255, 255, 255, 0.07);
+  --h-edge: rgba(0, 0, 0, 0.5);
+  --h-text: #f5f5f7;
+  --h-muted: #9a9aa1;
+  --h-secondary: #d1d1d6;
+  --h-primary: #0a84ff;
+  --h-fill: rgba(255, 255, 255, 0.1);
+  --h-hover: rgba(255, 255, 255, 0.16);
+  --h-sidebar: linear-gradient(180deg, #2b2b30, #252529);
+  --h-glass: rgba(255, 255, 255, 0.06);
+  --h-ok: #63d884;
+  --h-ok-bg: rgba(52, 199, 89, 0.17);
+  --h-warn: #ffb547;
+  --h-warn-bg: rgba(255, 159, 10, 0.17);
+  --h-bad: #ff8a80;
+  --h-bad-bg: rgba(255, 69, 58, 0.18);
+  --h-info-bg: rgba(255, 255, 255, 0.09);
+  --h-info: #c7c7cc;
+  --h-blue-bg: rgba(10, 132, 255, 0.2);
+  --h-blue: #7cbbff;
+  --h-wash: linear-gradient(180deg, #33281a 0, #232326 92px);
+  --h-hero: linear-gradient(135deg, #1c2e22 0%, #232326 45%, #32281b 100%);
+  --h-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 2px 10px rgba(0, 0, 0, 0.35);
+  --h-switch: #30d158;
+}
