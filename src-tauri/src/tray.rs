@@ -90,21 +90,8 @@ pub fn install(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
 pub fn update(app: &tauri::AppHandle, snapshot: &Snapshot) {
     if let Some(tray) = app.tray_by_id("harbor") {
-        let bytes: &[u8] = if snapshot
-            .services
-            .iter()
-            .any(|s| !s.apple && (s.state == "Failed" || s.health.status == "Failed"))
-        {
-            include_bytes!("../icons/tray-red.png")
-        } else if snapshot.counts.unmanaged > 0 {
-            include_bytes!("../icons/tray-orange.png")
-        } else {
-            include_bytes!("../icons/tray-green.png")
-        };
-        if let Ok(icon) = Image::from_bytes(bytes) {
-            let _ = tray.set_icon(Some(icon));
-            let _ = tray.set_icon_as_template(false);
-        }
+        // Keep the native template icon: macOS renders it white on dark menu bars
+        // and adapts its contrast on light ones. Status belongs in the tooltip/popover.
         let _ = tray.set_tooltip(Some(format!(
             "Harbor · {} running · {} need attention",
             snapshot.counts.running, snapshot.counts.attention

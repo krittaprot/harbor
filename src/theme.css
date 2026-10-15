@@ -309,6 +309,7 @@ button:disabled {
 .h-stat > div {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 .h-stat b {
   font: 700 28px/1.1 var(--font-harbor-rounded);
@@ -324,19 +325,17 @@ button:disabled {
   color: var(--h-muted);
   margin-top: 3px;
 }
-.h-ring {
-  width: 48px;
-  height: 48px;
-  flex: none;
-  fill: none;
-  stroke: var(--h-ok-bg);
-  stroke-width: 7;
+.h-health-summary {
+  margin: -8px 0 0;
+  color: var(--h-muted);
+  font-size: 12px;
+  line-height: 1.6;
 }
-.h-ring circle + circle {
-  stroke: var(--h-green);
-  stroke-linecap: round;
-  transform: rotate(-90deg);
-  transform-origin: center;
+.h-health-summary strong {
+  color: var(--h-text);
+}
+.h-health-summary strong.h-red {
+  color: var(--h-red);
 }
 .h-toolbar {
   display: flex;
@@ -1309,10 +1308,6 @@ button:disabled {
   }
   .h-stat b {
     font-size: 24px;
-  }
-  .h-stat .h-ring {
-    width: 36px;
-    height: 36px;
   }
   .h-search {
     max-width: none;

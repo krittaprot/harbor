@@ -1,6 +1,6 @@
 [package]
 name = "launchd-ui"
-version = "1.4.2"
+version = "1.5.0"
 description = "Harbor: macOS service monitoring for people and agents"
 authors = ["azu"]
 license = "MIT"

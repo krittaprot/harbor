@@ -29,7 +29,7 @@ export function HealthPill({ service: s }: { service: Service }) {
         : h.status === "PortOpen"
           ? "TCP open"
           : h.status === "Failed"
-            ? "Unhealthy"
+             ? "Check failed"
             : s.state
   return (
     <span
@@ -121,6 +121,9 @@ export function ServiceRow({
         <Ports ports={s.ports} />
         <div>
           <HealthPill service={s} />
+          {!["Ok", "PortOpen", "Failed"].includes(s.health.status) && (
+            <small className="h-sub h-tunnel">Health not checked</small>
+          )}
           {s.health.tunnels.length > 0 && (
             <small className="h-sub h-tunnel">
               {s.health.tunnels.filter((t) => t.ready).length}/
@@ -284,6 +287,9 @@ export function Services({
 }) {
   const [search, setSearch] = useState("")
   const all = s.services.filter((x) => !x.apple)
+  const passing = all.filter((x) => ["Ok", "PortOpen"].includes(x.health.status)).length
+  const failed = all.filter((x) => x.health.status === "Failed").length
+  const unchecked = all.length - passing - failed
   const visible = s.services.filter(
     (x) =>
       matchesService(x, search) &&
@@ -343,51 +349,52 @@ export function Services({
       <div className="h-page-content">
         <div className="h-stats">
           <div className="h-card h-stat">
-            <svg className="h-ring" viewBox="0 0 52 52" aria-hidden="true">
-              <circle cx="26" cy="26" r="21" />
-              <circle
-                cx="26"
-                cy="26"
-                r="21"
-                strokeDasharray={`${(132 * s.counts.healthy) / Math.max(1, all.length)} 132`}
-              />
-            </svg>
+            <ServiceTile icon="checklist" tint={passing ? "green" : "graphite"} size="large" />
             <div>
-              <b>
-                {s.counts.healthy}
-                <small>/{all.length}</small>
-              </b>
-              <span>Healthy services</span>
+              <b>{passing}</b>
+              <span>Checks passing</span>
+              <span>{unchecked} {unchecked === 1 ? "service" : "services"} unchecked</span>
             </div>
           </div>
           <button
             className="h-card h-stat"
             onClick={() => setFilter("unmanaged")}
           >
-            <ServiceTile icon="warning" tint="yellow" size="large" />
+            <ServiceTile icon="terminal" tint={s.counts.unmanaged ? "yellow" : "graphite"} size="large" />
             <div>
               <b>{s.counts.unmanaged}</b>
-              <span>Unmanaged to review</span>
+              <span>Processes to review</span>
             </div>
           </button>
           <button
             className="h-card h-stat"
             onClick={() => setFilter("attention")}
           >
-            <ServiceTile icon="warning" tint="red" size="large" />
+            <ServiceTile icon={s.counts.attention ? "warning" : "shield"} tint={s.counts.attention ? "red" : "graphite"} size="large" />
             <div>
               <b>{s.counts.attention}</b>
-              <span>Need attention</span>
+              <span>{s.counts.attention ? "Services to review" : "Services needing attention"}</span>
             </div>
           </button>
           <div className="h-card h-stat">
             <ServiceTile icon="unloaded" tint="graphite" size="large" />
             <div>
               <b>{s.counts.not_loaded}</b>
-              <span>Agents not loaded</span>
+              <span>Saved agents, not loaded</span>
             </div>
           </div>
         </div>
+        <p className="h-health-summary">
+          <strong className={failed ? "h-red" : undefined}>
+            {failed
+              ? `${failed} ${failed === 1 ? "service has a failed health check" : "services have failed health checks"}.`
+              : passing
+                ? "No health-check failures detected."
+                : "No health-check results yet."}
+          </strong>{" "}
+          Unchecked means health is unknown. Stopped or unloaded jobs are not necessarily failures;
+          some run only when needed. Failed jobs and recent restarts appear in Needs Attention.
+        </p>
         <div className="h-toolbar">
           <label className="h-search">
             <Search size={14} />
@@ -514,7 +521,7 @@ export function Services({
                     <span>Service</span>
                     <span>Launchd jobs</span>
                     <span>Ports</span>
-                    <span>Health</span>
+                    <span>Status & checks</span>
                     <span>Uptime</span>
                     <span>Actions</span>
                   </div>
@@ -563,8 +570,8 @@ export function Services({
           !(unmanaged.length && ["all", "unmanaged"].includes(filter)) && (
             <div className="h-empty">
               <Search size={26} />
-              <h2>No matching services</h2>
-              <p>Try a different name, port or filter.</p>
+              <h2>{filter === "attention" && !search ? "Nothing needs attention" : "No matching services"}</h2>
+              <p>{filter === "attention" && !search ? "No failed jobs, failed health checks or recent restarts detected." : "Try a different name, port or filter."}</p>
             </div>
           )}
         {s.diagnostics.warnings.length > 0 && <details className="h-card h-extensions"><summary>Scan diagnostics · {s.diagnostics.warnings.length} warnings</summary><pre>{s.diagnostics.warnings.join("\n")}</pre></details>}

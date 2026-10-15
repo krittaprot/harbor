@@ -34,6 +34,20 @@ Harbor was initially built for a particular Mac mini. Some defaults reflect that
 including `/Volumes/ProVault` readiness and example service groups. Group names, health URLs,
 dependencies and menu-bar pins can be customized in `services.toml`.
 
+## Download and install
+
+Download the **Apple Silicon (M-series) DMG** from
+[GitHub Releases](https://github.com/krittaprot/harbor/releases/latest).
+Open the DMG and drag **Harbor.app** into **Applications**, then launch it there.
+This first packaged release is for Apple Silicon; an Intel DMG is not included.
+
+The app is **ad-hoc signed, not Apple-notarized**. macOS may block the first launch:
+after trying to open Harbor, go to **System Settings → Privacy & Security → Open Anyway**
+and confirm. Only approve a download you obtained from this repository. The release includes
+`SHA256SUMS` for verifying the downloaded DMG.
+
+The app includes the agent CLI at `/Applications/Harbor.app/Contents/MacOS/harbor`.
+
 ## Build and run
 
 Requires macOS, Xcode Command Line Tools, Rust 1.88 or newer, Node.js 22.18 or newer,
@@ -48,7 +62,7 @@ open "src-tauri/target/release/bundle/macos/Harbor.app"
 ```
 
 Copy the resulting bundle to `~/Applications/` or `/Applications/` to install it. Local builds
-are ad-hoc signed, not notarized. There is no Harbor binary release yet.
+are ad-hoc signed, not notarized. To create a disk image, use `pnpm tauri build --bundles dmg`.
 
 Start-at-login and notifications default to on. Startup registration is applied only when
 launching an installed bundle; builds inside `target/` do not register themselves. Closing

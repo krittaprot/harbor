@@ -2,6 +2,45 @@
 
 Updated 2026-10-15. Harbor's redesigned app and backend features are implemented through phase 10.
 
+## First packaged release: v1.5.0 (2026-10-15)
+
+Version bumped consistently across package.json, Cargo.toml, Cargo.lock and tauri.conf.json.
+Release notes: `docs/releases/v1.5.0.md`; README now documents DMG installation, the bundled
+CLI, Apple Silicon scope and macOS's first-launch approval for ad-hoc/non-notarized builds.
+This release includes the CLI/adoption work, health wording and monochrome tray icon.
+
+Release checks passed: 49 frontend tests, 33 Rust unit tests, 4 CLI contract tests, 26 release
+script tests, lint, version consistency, formatting and all-target/all-feature clippy.
+The packaged app and CLI both report 1.5.0 and are arm64 with system-library dependencies.
+Package with `CI=true pnpm tauri build --bundles dmg` to avoid interactive Finder styling.
+Publish the checked DMG and `SHA256SUMS` together at tag `v1.5.0`; source on `harbor/main`.
+The 8,086,520-byte DMG passed `hdiutil verify`; mounted read-only, its bundle passed deep/strict
+signature verification and contains the Applications link and both arm64 executables. The
+mounted CLI passed version and capabilities checks. DMG SHA-256:
+`dec635c069b907ea9599bfa8dc5b99d6223fa690e33db7ce47e27040233b1c21`.
+
+## Monochrome menu-bar icon (2026-10-15)
+
+The tray now keeps its native template anchor instead of replacing it with green/orange/red
+icons after every scan. macOS renders it white against a dark menu bar and adjusts contrast
+for light backgrounds. Status still appears in the tooltip/popover. Release/debug bundles
+rebuilt, formatting checked and release signature verified. Quit/reopen to apply.
+
+## Health wording (2026-10-15)
+
+Replaced the Services healthy/total ratio and progress ring with **Checks passing** and an
+explicit unchecked-service count. The summary distinguishes failed checks, no detected check
+failures, and no results yet. Counts describe probe outcomes; failed jobs/recent restarts remain
+in Needs Attention independently. Unchecked rows show **Health not checked** under lifecycle
+status. Stopped/unloaded jobs are explained as not necessarily failures. Zero-count attention
+and process-review tiles use neutral icons, and the empty attention filter explains its result.
+
+Verified lint, build and all 49 frontend tests. Chromium checked the built UI at 375/768/1100px,
+plus failure, all-unchecked and empty fixtures via mocked read-only IPC. The captured live scan
+showed 17 passing and 10 unchecked services. `docs/verification/harbor-health-wording.png`
+shows that built preview, not a native screenshot. Release/debug app bundles rebuilt; release
+signature verified. Quit/reopen Harbor to see the change.
+
 ## CLI addition (2026-10-15)
 
 Implemented on local branch `harbor/cli`; publication branch remains `harbor/main`.
