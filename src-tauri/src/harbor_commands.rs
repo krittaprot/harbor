@@ -33,13 +33,7 @@ pub fn ignore_unmanaged(
     if !scanner.snapshot()?.unmanaged.iter().any(|g| g.key == key) {
         return Err("Process group no longer exists".into());
     }
-    config::update(|c| {
-        c.ignored.retain(|k| k != &key);
-        if ignored {
-            c.ignored.push(key);
-        }
-    })
-    .map(|_| ())
+    config::set_temporary(&key, ignored)
 }
 
 #[tauri::command]

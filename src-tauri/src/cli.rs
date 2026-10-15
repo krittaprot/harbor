@@ -66,6 +66,17 @@ enum Command {
         #[arg(long)]
         include_apps: bool,
     },
+    /// Remember an unmanaged command group as temporary (same as the app checkbox).
+    Temporary {
+        /// Exact group key from `unmanaged --json`. Applies to all current/future copies.
+        key: String,
+        /// Restore review warnings; also works for remembered groups no longer running.
+        #[arg(long)]
+        undo: bool,
+        /// Preview the preference change without saving it.
+        #[arg(long)]
+        dry_run: bool,
+    },
     /// Probe service health. Exits 1 if any selected service is failed or unhealthy.
     Health { id: Option<String> },
     /// Read login apps through System Events (may need macOS Automation permission).
@@ -265,7 +276,7 @@ fn capabilities() -> Value {
         .map(|c| json!({"name":c.get_name(),"description":c.get_about().map(|a| a.to_string())}))
         .collect();
     json!({"name":"harbor","version":env!("CARGO_PKG_VERSION"),"schema_version":SCHEMA_VERSION,"platform":"macos",
-        "gui_required":false,"commands":commands,"mutating_commands":["start --yes","stop --yes","restart --yes","snapshot --save"],
+        "gui_required":false,"commands":commands,"mutating_commands":["start --yes","stop --yes","restart --yes","snapshot --save","temporary"],
         "json_flags":["--json"],"exit_codes":{"0":"success","1":"operation failed or unhealthy health result","2":"usage or confirmation required","3":"target not found","4":"operation refused"},
         "notes":["Process CPU is null in single-shot inventory.","Health is NotChecked unless --probe or the health command is used.","Non-root inventory can be incomplete; inspect diagnostics.","A successful service action means launchctl accepted it, not that the service became healthy."]})
 }
@@ -351,8 +362,31 @@ fn execute(cli: &Cli, snapshot: &Snapshot) -> Result<Output, CliError> {
             Ok(Output::detail(json!(ports)))
         }
         Command::Unmanaged { include_apps } => Ok(Output::detail(
-            json!({"unmanaged":snapshot.unmanaged,"app_owned":if *include_apps { Some(&snapshot.app_owned) } else { None }}),
+            json!({"unmanaged":snapshot.unmanaged,"app_owned":if *include_apps { Some(&snapshot.app_owned) } else { None },
+                "temporary_keys":crate::config::load().map_err(CliError::operation)?.ignored}),
         )),
+        Command::Temporary { key, undo, dry_run } => {
+            let config = crate::config::load().map_err(CliError::operation)?;
+            let group = snapshot.unmanaged.iter().find(|g| &g.key == key);
+            if group.is_none() && !(*undo && config.ignored.contains(key)) {
+                return Err(CliError::new(
+                    "not_found",
+                    "No matching unmanaged group. Use the exact key from `harbor unmanaged --json` (temporary_keys also lists remembered groups for --undo).",
+                    3,
+                ));
+            }
+            let temporary = !undo;
+            let changed = config.ignored.contains(key) != temporary;
+            if !dry_run && changed {
+                crate::config::set_temporary(key, temporary).map_err(CliError::operation)?;
+            }
+            Ok(Output::detail(json!({
+                "key":key,"temporary":temporary,"previous_temporary":config.ignored.contains(key),
+                "dry_run":dry_run,"changed":!dry_run && changed,"would_change":changed,
+                "running_copies":group.map_or(0, |g| g.copies.len()),
+                "scope":"all current and future copies of this command group"
+            })))
+        }
         Command::Health { id } => {
             let selected: Vec<_> = if let Some(id) = id {
                 vec![find_service(snapshot, id)?]

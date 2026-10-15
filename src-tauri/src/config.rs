@@ -94,6 +94,17 @@ pub fn update(change: impl FnOnce(&mut Config)) -> Result<Config, String> {
     Ok(config)
 }
 
+/// Shared preference for the desktop checkbox and agent CLI; never touches a process.
+pub fn set_temporary(key: &str, temporary: bool) -> Result<(), String> {
+    update(|c| {
+        c.ignored.retain(|k| k != key);
+        if temporary {
+            c.ignored.push(key.to_owned());
+        }
+    })
+    .map(|_| ())
+}
+
 pub fn seed(services: &[crate::model::Service]) -> Result<(), String> {
     let _lock = CONFIG_LOCK.lock().map_err(|e| e.to_string())?;
     if directory().join("services.toml").exists() {

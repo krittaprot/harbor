@@ -24,6 +24,15 @@ check of mark/undo and responsive overflow with mocked IPC (not native runtime a
 Clippy passed with all targets/features and warnings denied. Normal release/debug bundles
 were rebuilt, the release signature verified, and the installed CLI refreshed.
 
+Agents can now set that same preference with `harbor temporary "<exact group key>" --json`,
+preview it with `--dry-run`, or clear it with `--undo`. This reversible preference does not
+require `--yes`. The desktop and CLI share `config::set_temporary`; `unmanaged --json` also
+returns `temporary_keys` so stopped groups can be unmarked. Repeated sets are idempotent.
+Installed-CLI smoke checks with an isolated HOME verified dry-run, persistence, repeated set,
+inventory visibility, undo (including a stopped group), unknown-key errors and preservation of
+unrelated settings. Real preferences remained byte-for-byte unchanged. Rust tests and clippy
+passed again; installed CLI and both normal app bundles were refreshed.
+
 ## Read first
 
 Read `../AGENTS.md`, `../APPS.md`, `docs/PLAN.md`, `docs/PHASE-1.md` and `docs/VERIFICATION.md`.

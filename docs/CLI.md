@@ -72,6 +72,23 @@ restart findings. Existing “Mark expected” choices use the same preference. 
 they retain `verdict: "Expected"` for compatibility, with a `hint` explaining the temporary
 choice. This preference does not create a LaunchAgent or stop any process.
 
+Agents can make the same choice through the CLI:
+
+```bash
+harbor unmanaged --json
+harbor temporary "<exact group key>" --dry-run --json
+harbor temporary "<exact group key>" --json
+harbor temporary "<exact group key>" --undo --json
+```
+
+Copy the exact `key` from `data.unmanaged` and quote it (keys often contain `|` and paths).
+This reversible preference needs no `--yes`; the command explicitly sets it, rather than
+toggling it, so repeating it is safe. Output reports `temporary`, `previous_temporary`,
+`changed`, `would_change`, `dry_run`, and the number of `running_copies`. The app reflects the
+choice on its next scan. `data.temporary_keys` lists saved choices, including stopped groups;
+`--undo` accepts those keys too. Unknown keys return `not_found` with exit 3. Marking a new
+group requires it to be present in unmanaged inventory. No health probe runs unless requested.
+
 ## Logs and login apps
 
 ```bash
