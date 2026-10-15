@@ -1,4 +1,5 @@
 mod adopt;
+pub mod cli;
 mod commands;
 mod config;
 mod error;
@@ -8,6 +9,7 @@ mod health;
 mod launchctl;
 mod login;
 mod model;
+mod operations;
 mod plist_util;
 mod ports;
 mod procs;

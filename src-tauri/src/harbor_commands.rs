@@ -12,62 +12,11 @@ pub async fn service_action(
     action: String,
     scanner: State<'_, Scanner>,
 ) -> Result<(), String> {
-    if !["start", "stop", "restart"].contains(&action.as_str()) {
-        return Err("Unknown service action".into());
-    }
+    let action = action.parse::<crate::operations::ServiceAction>()?;
     let snapshot = scanner.snapshot()?;
-    let mut service = snapshot
-        .services
-        .into_iter()
-        .find(|s| s.id == id)
-        .ok_or("Service no longer exists")?;
-    if service.jobs.iter().any(|j| !j.editable) {
-        return Err("This service includes read-only jobs".into());
-    }
-    for job in &service.jobs {
-        let path = job.plist_path.as_ref().ok_or("Job has no plist")?;
-        config::user_plist(path)?;
-        if !config::label_valid(&job.label)
-            || crate::plist_util::parse_plist(path)
-                .map_err(|e| e.to_string())?
-                .label
-                != job.label
-        {
-            return Err("Job label changed; rescan first".into());
-        }
-    }
-    service.jobs.sort_by_key(|j| {
-        if j.role.contains("postgres") {
-            0
-        } else if j.role.contains("tunnel") || j.role.contains("cloudflared") {
-            2
-        } else {
-            1
-        }
-    });
-    tauri::async_runtime::spawn_blocking(move || {
-        if action != "start" {
-            let loaded = crate::launchctl::list_loaded().map_err(|e| e.to_string())?;
-            for job in service.jobs.iter().rev() {
-                if loaded.iter().any(|l| l.label == job.label) {
-                    crate::launchctl::bootout(job.plist_path.as_deref().unwrap())
-                        .map_err(|e| format!("{}: {e}", job.label))?;
-                }
-            }
-        }
-        if action != "stop" {
-            let loaded = crate::launchctl::list_loaded().map_err(|e| e.to_string())?;
-            for job in &service.jobs {
-                if !loaded.iter().any(|l| l.label == job.label) {
-                    crate::launchctl::bootstrap(job.plist_path.as_deref().unwrap())
-                        .map_err(|e| format!("{}: {e}", job.label))?;
-                }
-            }
-        }
-        Ok(())
-    })
-    .await
-    .map_err(|e| e.to_string())?
+    tauri::async_runtime::spawn_blocking(move || crate::operations::apply(&snapshot, &id, action))
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]

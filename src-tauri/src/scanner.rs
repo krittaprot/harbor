@@ -123,43 +123,7 @@ impl Scanner {
                         }
                     }
                 }
-                let visible: Vec<_> = snapshot.services.iter().filter(|s| !s.apple).collect();
-                snapshot.counts = Counts {
-                    healthy: visible
-                        .iter()
-                        .filter(|s| {
-                            ["Ok", "PortOpen"].contains(&s.health.status.as_str())
-                                && s.state != "Failed"
-                        })
-                        .count(),
-                    attention: visible
-                        .iter()
-                        .filter(|s| {
-                            s.state == "Failed"
-                                || s.state == "Restarted"
-                                || s.health.status == "Failed"
-                        })
-                        .count(),
-                    running: visible
-                        .iter()
-                        .flat_map(|s| &s.jobs)
-                        .filter(|j| j.pid.is_some())
-                        .count(),
-                    unmanaged: snapshot
-                        .unmanaged
-                        .iter()
-                        .filter(|g| g.verdict != "Expected")
-                        .map(|g| g.copies.len())
-                        .sum(),
-                    not_loaded: snapshot.not_loaded.len(),
-                    ports: snapshot.listening_port_count,
-                    hidden: snapshot
-                        .services
-                        .iter()
-                        .filter(|s| s.apple)
-                        .flat_map(|s| &s.jobs)
-                        .count(),
-                };
+                update_counts(&mut snapshot);
                 if let Err(e) = config::seed(&snapshot.services) {
                     snapshot.diagnostics.warnings.push(e);
                 }
@@ -271,4 +235,62 @@ impl Drop for Scanner {
     fn drop(&mut self) {
         self.stop();
     }
+}
+
+/// A standalone inventory for CLI callers. Does not launch Tauri, seed config,
+/// send notifications, register login startup or write an automatic snapshot.
+pub fn scan_once() -> Result<Snapshot, String> {
+    config::load()?; // Fail explicitly instead of silently using defaults for agent actions.
+    let started = Instant::now();
+    let mut snapshot = collect(&mut ProcessScanner::default());
+    if let Some(error) = snapshot
+        .diagnostics
+        .warnings
+        .iter()
+        .find(|w| w.starts_with("launchctl"))
+    {
+        return Err(error.clone());
+    }
+    snapshot.system = system::scan(snapshot.uid);
+    update_counts(&mut snapshot);
+    snapshot.taken_at = Utc::now();
+    snapshot.diagnostics.duration_ms = started.elapsed().as_millis() as u64;
+    Ok(snapshot)
+}
+
+pub fn update_counts(snapshot: &mut Snapshot) {
+    let visible: Vec<_> = snapshot.services.iter().filter(|s| !s.apple).collect();
+    snapshot.counts = Counts {
+        healthy: visible
+            .iter()
+            .filter(|s| {
+                ["Ok", "PortOpen"].contains(&s.health.status.as_str()) && s.state != "Failed"
+            })
+            .count(),
+        attention: visible
+            .iter()
+            .filter(|s| {
+                s.state == "Failed" || s.state == "Restarted" || s.health.status == "Failed"
+            })
+            .count(),
+        running: visible
+            .iter()
+            .flat_map(|s| &s.jobs)
+            .filter(|j| j.pid.is_some())
+            .count(),
+        unmanaged: snapshot
+            .unmanaged
+            .iter()
+            .filter(|g| g.verdict != "Expected")
+            .map(|g| g.copies.len())
+            .sum(),
+        not_loaded: snapshot.not_loaded.len(),
+        ports: snapshot.listening_port_count,
+        hidden: snapshot
+            .services
+            .iter()
+            .filter(|s| s.apple)
+            .flat_map(|s| &s.jobs)
+            .count(),
+    };
 }

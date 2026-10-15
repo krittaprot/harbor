@@ -32,6 +32,18 @@ fn applescript(script: &str) -> Result<String, String> {
 }
 
 pub fn read(processes: &[crate::model::ProcInfo]) -> Result<LoginItems, String> {
+    read_inventory(processes, true)
+}
+
+/// CLI inventory does not update the desktop's persisted login-path cache.
+pub fn inspect(processes: &[crate::model::ProcInfo]) -> Result<LoginItems, String> {
+    read_inventory(processes, false)
+}
+
+fn read_inventory(
+    processes: &[crate::model::ProcInfo],
+    persist: bool,
+) -> Result<LoginItems, String> {
     let text = applescript(
         "JSON.stringify(Application('System Events').loginItems().map(x => ({name:x.name(),path:x.path()})))",
     )?;
@@ -42,7 +54,9 @@ pub fn read(processes: &[crate::model::ProcInfo]) -> Result<LoginItems, String> 
             known.insert(path.into(), name.into());
         }
     }
-    config::update(|c| c.login_paths = known.clone())?;
+    if persist {
+        config::update(|c| c.login_paths = known.clone())?;
+    }
     let apps = known
         .into_iter()
         .map(|(path, name)| LoginApp {
