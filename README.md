@@ -1,3 +1,13 @@
+# Harbor
+
+A user-level macOS service monitor for mini, based on [azu/launchd-ui](https://github.com/azu/launchd-ui) v1.4.2 (MIT). Copyright (c) azu; Harbor additions copyright (c) 2026 ode.
+
+See [the build plan](docs/PLAN.md) for scope and safety rules. Run commands from the project root. Development runs in the foreground only: `pnpm tauri dev`, then Ctrl-C when finished. No startup service is installed by development.
+
+The upstream job manager is retained while the Harbor scanner is built. System agents and daemons remain read-only.
+
+## Upstream documentation
+
 # launchd-ui
 
 A GUI application for managing macOS launchd agents and daemons. Built with Tauri v2.
