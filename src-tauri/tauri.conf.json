@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Harbor",
   "mainBinaryName": "harbor-app",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "identifier": "com.ode.harbor",
   "build": {
     "frontendDist": "../dist",
@@ -27,7 +27,10 @@
     }
   },
   "bundle": {
-    "macOS": { "infoPlist": "Info.plist", "signingIdentity": "-" },
+    "macOS": {
+      "infoPlist": "Info.plist",
+      "signingIdentity": "-"
+    },
     "active": true,
     "targets": "all",
     "icon": [
