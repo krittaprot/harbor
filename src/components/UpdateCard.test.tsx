@@ -26,11 +26,14 @@ it("checks only on request and distinguishes up-to-date from an offline error", 
   await screen.findByText("Harbor 1.5.2 · GitHub Releases")
   expect(checks).toBe(0)
   fireEvent.click(screen.getByRole("button", { name: "Check for Updates" }))
-  expect(await screen.findByText("You’re up to date.")).toBeVisible()
+  expect(await screen.findByText("You’re all set!")).toBeVisible()
+  expect(screen.getByRole("status")).toHaveTextContent("Harbor 1.5.2 is the latest version")
+  expect(screen.getByRole("status").querySelector("time")).toHaveAttribute("datetime")
   setFakeHandler("check_update", () => { throw new Error("Network unavailable") })
   fireEvent.click(screen.getByRole("button", { name: "Check for Updates" }))
   expect(await screen.findByRole("alert")).toHaveTextContent("Network unavailable")
-  expect(screen.queryByText("You’re up to date.")).not.toBeInTheDocument()
+  expect(screen.queryByText("You’re all set!")).not.toBeInTheDocument()
+  expect(screen.queryByText(/Checked at/)).not.toBeInTheDocument()
 })
 
 it("requires an explicit install, rejects duplicate clicks and keeps progress across navigation", async () => {
@@ -46,6 +49,7 @@ it("requires an explicit install, rejects duplicate clicks and keeps progress ac
   render(<Harness />)
   fireEvent.click(screen.getByRole("button", { name: "Check for Updates" }))
   const install = await screen.findByRole("button", { name: "Download & Install 1.5.3" })
+  expect(screen.getByRole("status")).toHaveTextContent("A new update is ready")
   expect(installs).toBe(0)
   fireEvent.click(install)
   fireEvent.click(install)
@@ -60,6 +64,21 @@ it("requires an explicit install, rejects duplicate clicks and keeps progress ac
   await act(async () => complete())
   expect(screen.getByRole("button", { name: "Restart Harbor" })).toBeEnabled()
   expect(screen.queryByRole("button", { name: /Download & Install/ })).not.toBeInTheDocument()
+})
+
+it("shows checking feedback until GitHub responds, without claiming success early", async () => {
+  let resolve!: (value: null) => void
+  setFakeHandler("check_update", () => new Promise<null>(done => { resolve = done }))
+  render(<Harness />)
+  fireEvent.click(screen.getByRole("button", { name: "Check for Updates" }))
+  await waitFor(() => expect(resolve).toBeTypeOf("function"))
+  expect(screen.getByRole("button", { name: "Checking…" })).toBeDisabled()
+  expect(screen.getByRole("status")).toHaveTextContent("Looking for something new…")
+  expect(screen.queryByText("You’re all set!")).not.toBeInTheDocument()
+  expect(screen.queryByText(/Checked at/)).not.toBeInTheDocument()
+  await act(async () => resolve(null))
+  expect(screen.getByRole("status")).toHaveTextContent("You’re all set!")
+  expect(screen.getByRole("button", { name: "Check for Updates" })).toBeEnabled()
 })
 
 it("keeps failed signature verification retryable without offering a restart", async () => {

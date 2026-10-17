@@ -19,6 +19,29 @@ from automated/native checks; a real reboot was not requested or performed.
 
 ## Checks passed
 
+### Menu-bar-only launch — unreleased, 2026-10-17
+
+- Built the native smoke app and confirmed its merged `Info.plist` has `LSUIElement=true`.
+- Native startup checks confirmed both dashboard and popover windows were hidden while
+  Harbor's tray icon existed. The smoke harness then used the same `show_main` command as
+  the menu-bar Open Harbor action and confirmed that the dashboard became visible.
+- An independent `NSRunningApplication` query confirmed macOS accessory activation policy
+  while the dashboard was open: no Dock or Command-Tab entry.
+- Native WebKit acceptance passed, including Settings navigation, with no CSP violations
+  or missing port bindings. Rust formatting/clippy, frontend build, plist validation,
+  version consistency and release-script checks passed.
+
+### Update feedback — unreleased, 2026-10-17
+
+- 58 frontend tests pass, including a deferred GitHub response that stays in the checking
+  state until resolved, successful-check timestamps, distinct current/available outcomes,
+  and clearing successful feedback after a failed recheck.
+- The actual React card was exercised in the development-only state gallery at
+  `src/components/UpdateCard.preview.html`: checking → current, available, and error.
+- Inspected both light and dark appearances at 320, 375, 414, 768 and 1100 px; no page overflow
+  or wrapped button labels. Verified the orbit animation runs during checking and is disabled
+  under reduced motion. The preview is not a production build entry.
+
 ### In-app updater — v1.5.2, 2026-10-17
 
 - 42 Rust tests, 4 CLI contract tests, 57 frontend tests, 26 release-script tests and 3

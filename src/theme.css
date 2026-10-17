@@ -9,6 +9,81 @@
 .h-update-notes { font-size: 12px; }
 .h-update-notes summary { cursor: pointer; }
 .h-update-notes p { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow-y: auto; }
+/* Hallmark · component: update feedback · theme: Harbor · tone: friendly utilitarian
+ * states: default · hover · focus · active · disabled · loading · error · success
+ * pre-emit critique: P5 H4 E4 S5 R5 V4 */
+.h-update-card .h-list-row { gap: 16px; flex-wrap: wrap; }
+.h-update-check { white-space: nowrap; min-height: 36px; }
+.h-update-status {
+  --update-ink: var(--h-blue);
+  --update-surface: var(--h-blue-bg);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  min-height: 94px;
+  border-radius: 12px;
+  background: var(--h-sunken);
+}
+.h-update-status--success { --update-ink: var(--h-ok); --update-surface: var(--h-ok-bg); }
+.h-update-status--error { --update-ink: var(--h-bad); --update-surface: var(--h-bad-bg); }
+.h-update-status--idle { --update-ink: var(--h-info); --update-surface: var(--h-info-bg); }
+.h-update-symbol {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  position: relative;
+  color: var(--update-ink);
+  background: var(--update-surface);
+  animation: h-update-arrive 260ms ease-out both;
+}
+.h-update-symbol.is-checking { border-radius: 50%; animation: none; }
+.h-update-symbol.is-checking > svg { animation: h-update-breathe 1.8s ease-in-out infinite; }
+.h-update-orbit {
+  position: absolute;
+  inset: -4px;
+  border: 2px solid transparent;
+  border-top-color: var(--update-ink);
+  border-right-color: var(--update-ink);
+  border-radius: 50%;
+  animation: h-update-orbit 1.1s linear infinite;
+}
+.h-update-status--success .h-update-symbol svg path {
+  stroke-dasharray: 32;
+  stroke-dashoffset: 0;
+  animation: h-update-checkmark 400ms ease-out both;
+}
+.h-update-message { min-width: 0; }
+.h-update-message > strong { display: block; color: var(--h-text); font-size: 14px; font-weight: 600; }
+.h-update-message > p { margin: 4px 0 0; color: var(--h-secondary); font-size: 12px; line-height: 1.5; }
+.h-update-message > time { display: block; margin-top: 6px; color: var(--h-muted); font-size: 11px; }
+.h-update-error-details { margin-top: 8px; font-size: 12px; color: var(--h-secondary); }
+.h-update-error-details summary { cursor: pointer; }
+.h-update-error-details p { overflow-wrap: anywhere; margin-bottom: 0; }
+.h-update-card button:focus-visible, .h-update-card a:focus-visible, .h-update-card summary:focus-visible {
+  outline: 2px solid var(--h-blue); outline-offset: 3px;
+}
+.h-update-card button:active:not(:disabled) { transform: translateY(1px); }
+.h-update-card[data-update-state="checking"] .h-update-check:disabled { opacity: 1; color: var(--h-secondary); }
+@media (hover: hover) {
+  .h-update-card .h-update-check:hover:not(:disabled) { background: var(--h-hover); }
+}
+@keyframes h-update-orbit { to { transform: rotate(360deg); } }
+@keyframes h-update-breathe { 0%, 100% { opacity: .65; transform: scale(.94); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes h-update-arrive { from { opacity: 0; transform: scale(.88); } to { opacity: 1; transform: scale(1); } }
+@keyframes h-update-checkmark { from { stroke-dashoffset: 32; } to { stroke-dashoffset: 0; } }
+@media (max-width: 480px) {
+  .h-update-status { align-items: flex-start; gap: 12px; padding: 14px; }
+  .h-update-symbol { width: 40px; height: 40px; border-radius: 13px; }
+  .h-update-card .h-button { min-height: 44px; white-space: nowrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .h-update-symbol, .h-update-symbol.is-checking > svg, .h-update-orbit,
+  .h-update-status--success .h-update-symbol svg path { animation: none; }
+}
 html,
 body {
   overflow-x: clip;

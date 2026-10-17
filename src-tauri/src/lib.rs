@@ -40,6 +40,10 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
+            // LSUIElement handles bundled launches; also keep direct/dev launches
+            // out of the Dock while allowing windows opened from the menu bar.
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             app.manage(updates::Updates::default());
             app.manage(login::LoginCache::default());
             app.manage(snapshots::SnapshotState::default());

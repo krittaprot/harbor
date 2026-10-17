@@ -37,6 +37,12 @@ pub fn isolate_fixture(
 }
 
 pub fn install(app: &tauri::App) {
+    let main = app.get_webview_window("main").expect("main window");
+    let popover = app.get_webview_window("popover").expect("menu-bar popover");
+    assert!(!main.is_visible().expect("main visibility"));
+    assert!(!popover.is_visible().expect("popover visibility"));
+    assert!(app.tray_by_id("harbor").is_some());
+    println!("HARBOR_NATIVE_STARTUP menu-bar-only: both windows hidden, tray present");
     let popover_app = app.handle().clone();
     app.listen("harbor://smoke-popover", move |_| {
         if let Some(window) = popover_app.get_webview_window("popover") {
