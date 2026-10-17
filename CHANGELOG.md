@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Release tooling
+
+- Normalize tauri-action's floating updater URLs to version-pinned GitHub URLs and
+  include the release notes in the updater manifest before publishing.
+
 ## [1.5.2](docs/releases/v1.5.2.md) — 2026-10-17
 
 ### Added

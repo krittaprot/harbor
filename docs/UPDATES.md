@@ -30,6 +30,8 @@ Updater signing is separate from Apple Developer ID signing/notarization.
 3. Merge the release PR with the **Type: Release** label.
 4. The release workflow creates a draft, builds both Mac architectures, signs and uploads the
    updater archives, then checks that both platform entries, signatures, URLs and versions match.
+   The validator pins tauri-action's floating `latest` asset URLs to the exact release tag
+   (including bundle-specific target aliases) and fills the manifest's release notes from the PR.
    It uploads `SHA256SUMS` and publishes only after all assets pass validation.
 
 If repository settings prohibit Actions from opening a PR, the workflow may still create

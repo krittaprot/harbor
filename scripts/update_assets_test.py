@@ -60,6 +60,31 @@ class UpdateAssetsTest(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             self.check()
 
+    def test_action_floating_urls_are_pinned_and_release_notes_are_included(self):
+        for key, value in list(self.manifest["platforms"].items()):
+            value["url"] = value["url"].replace("download/v1.5.2/", "latest/download/")
+            self.manifest["platforms"][f"{key}-app"] = dict(value)
+        path = self.folder / "latest.json"
+        path.write_text(json.dumps(self.manifest))
+        verify(self.folder, "v1.5.2", "Release notes for Harbor")
+        result = json.loads(path.read_text())
+        self.assertEqual(result["notes"], "Release notes for Harbor")
+        self.assertEqual(len(result["platforms"]), 4)
+        for platform in result["platforms"].values():
+            self.assertIn("/download/v1.5.2/", platform["url"])
+        # Validation is idempotent, including the manifest's checksum.
+        sums = (self.folder / "SHA256SUMS").read_text()
+        verify(self.folder, "v1.5.2", "Release notes for Harbor")
+        self.assertEqual((self.folder / "SHA256SUMS").read_text(), sums)
+
+    def test_bundle_specific_target_cannot_point_elsewhere(self):
+        self.manifest["platforms"]["darwin-aarch64-app"] = {
+            "url": "https://example.com/untrusted.tar.gz",
+            "signature": "fixture-signature-aarch64",
+        }
+        with self.assertRaises(ValueError):
+            self.check()
+
 
 if __name__ == "__main__":
     unittest.main()
