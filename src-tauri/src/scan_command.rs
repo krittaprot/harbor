@@ -5,6 +5,8 @@ use std::os::fd::AsRawFd;
 use std::process::{Command, Output, Stdio};
 use std::time::{Duration, Instant};
 
+const DEFAULT_TIMEOUT: Duration = Duration::from_secs(3);
+
 fn nonblocking(pipe: &impl AsRawFd) -> io::Result<()> {
     // SAFETY: the borrowed pipe owns a valid descriptor for the entire call.
     let result = unsafe { libc::fcntl(pipe.as_raw_fd(), libc::F_SETFL, libc::O_NONBLOCK) };
@@ -35,12 +37,24 @@ fn drain(pipe: &mut impl Read, bytes: &mut Vec<u8>) -> io::Result<()> {
 }
 
 pub fn output(program: &str, args: &[&str]) -> io::Result<Output> {
-    output_with_timeout(program, args, Duration::from_secs(3))
+    output_with_timeout(program, args, DEFAULT_TIMEOUT)
 }
 
 pub fn output_with_timeout(program: &str, args: &[&str], timeout: Duration) -> io::Result<Output> {
-    let mut child = Command::new(program)
-        .args(args)
+    capture(Command::new(program).args(args), timeout)
+}
+
+/// Override only this helper's environment, without changing the app or other workers.
+pub fn output_with_env(program: &str, args: &[&str], env: &[(&str, &str)]) -> io::Result<Output> {
+    capture(
+        Command::new(program).args(args).envs(env.iter().copied()),
+        DEFAULT_TIMEOUT,
+    )
+}
+
+fn capture(command: &mut Command, timeout: Duration) -> io::Result<Output> {
+    let program = command.get_program().to_string_lossy().into_owned();
+    let mut child = command
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -107,6 +121,20 @@ mod tests {
         assert!(result.status.success());
         assert_eq!(result.stdout, b"p12\nn*:5432\n");
         assert!(result.stderr.is_empty());
+    }
+
+    #[test]
+    fn helper_environment_is_explicit_and_scoped_to_the_child() {
+        let before = std::env::var_os("TAILSCALE_BE_CLI");
+        let result = output_with_env(
+            "/usr/bin/printenv",
+            &["TAILSCALE_BE_CLI"],
+            &[("TAILSCALE_BE_CLI", "1")],
+        )
+        .unwrap();
+        assert!(result.status.success());
+        assert_eq!(result.stdout, b"1\n");
+        assert_eq!(std::env::var_os("TAILSCALE_BE_CLI"), before);
     }
 
     #[test]

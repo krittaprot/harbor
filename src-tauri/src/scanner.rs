@@ -100,7 +100,11 @@ impl Scanner {
             loop {
                 let started = Instant::now();
                 let mut snapshot = collect(&mut processes);
-                if system_cache.is_none() || system_time.elapsed() >= Duration::from_secs(60) {
+                // Explicit Rescan requests must not reuse stale system status.
+                if reply.is_some()
+                    || system_cache.is_none()
+                    || system_time.elapsed() >= Duration::from_secs(60)
+                {
                     system_cache = Some(system::scan(snapshot.uid));
                     system_time = Instant::now();
                 }

@@ -16,7 +16,12 @@
     }
     assert(first, "initial snapshot did not arrive");
     assert(document.title === "Harbor", "HTML title");
-    for (let n = 0; n < 100 && document.querySelector("h1")?.textContent !== "Services"; n++) await delay(100);
+    const nav = text => [...document.querySelectorAll('.h-nav')].find(b => b.textContent.includes(text));
+    // A saved restart report can select Restart Readiness on startup.
+    for (let n = 0; n < 100 && document.querySelector("h1")?.textContent !== "Services"; n++) {
+      nav('Services')?.click();
+      await delay(100);
+    }
     assert(document.querySelector("h1")?.textContent === "Services", "rendered Services heading");
     const visual = async theme => {
       await delay(300);
@@ -52,7 +57,6 @@
     assert(document.querySelector('[data-service="crystal-blood"]'), "search by port");
     setter.call(search, ''); search.dispatchEvent(new Event('input', { bubbles: true }));
     await delay(250);
-    const nav = text => [...document.querySelectorAll('.h-nav')].find(b => b.textContent.includes(text));
     nav('Restart Readiness').click();
     await delay(350);
     assert(document.querySelector('h1')?.textContent === 'Restart Readiness', 'restart navigation');
@@ -84,6 +88,9 @@
     let second = await invoke("get_snapshot");
     assert(second.taken_at > first.taken_at, "periodic scan/cache refresh");
     assert(events.some(s => s.taken_at === second.taken_at), "snapshot event/cache agree");
+    const refreshed = await invoke("rescan_now");
+    assert(refreshed.taken_at > second.taken_at, "explicit Rescan returns a fresh snapshot");
+    second = refreshed;
     assert(second.processes.some(p => p.cpu !== null), "CPU warmed across scans");
     assert(new Set(second.ports.map(p => p.port)).size === second.listening_port_count, "port count");
     assert(violations.length === 0, "CSP violation");
