@@ -19,7 +19,7 @@ from automated/native checks; a real reboot was not requested or performed.
 
 ## Checks passed
 
-### Menu-bar-only launch — unreleased, 2026-10-17
+### Menu-bar-only launch — v1.5.3, 2026-10-17
 
 - Built the native smoke app and confirmed its merged `Info.plist` has `LSUIElement=true`.
 - Native startup checks confirmed both dashboard and popover windows were hidden while
@@ -31,7 +31,7 @@ from automated/native checks; a real reboot was not requested or performed.
   or missing port bindings. Rust formatting/clippy, frontend build, plist validation,
   version consistency and release-script checks passed.
 
-### Update feedback — unreleased, 2026-10-17
+### Update feedback — v1.5.3, 2026-10-17
 
 - 58 frontend tests pass, including a deferred GitHub response that stays in the checking
   state until resolved, successful-check timestamps, distinct current/available outcomes,
@@ -41,6 +41,14 @@ from automated/native checks; a real reboot was not requested or performed.
 - Inspected both light and dark appearances at 320, 375, 414, 768 and 1100 px; no page overflow
   or wrapped button labels. Verified the orbit animation runs during checking and is disabled
   under reduced motion. The preview is not a production build entry.
+
+### Release preparation — v1.5.3, 2026-10-17
+
+- Replaced the bot PR action with a branch preparation and maintainer-link workflow.
+- Integration coverage uses a local bare Git remote to verify initial branch creation,
+  preservation of maintainer commits on rerun, rejected pushes and unavailable remotes.
+- 28 release-script tests and 5 updater-asset validation tests pass. The latter cover the
+  previously corrected floating-to-versioned download URL normalization.
 
 ### In-app updater — v1.5.2, 2026-10-17
 

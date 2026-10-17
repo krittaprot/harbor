@@ -14,12 +14,15 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: prepare-release
+  cancel-in-progress: false
+
 jobs:
   create-release-pr:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -51,14 +54,11 @@ jobs:
             -f target_commitish="$GITHUB_SHA" \
             --jq .body > "$RUNNER_TEMP/release-notes.md"
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7.0.11
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore(release): v${{ steps.version.outputs.version }}"
-          branch: release/v${{ steps.version.outputs.version }}
-          delete-branch: true
-          title: "v${{ steps.version.outputs.version }}"
-          body-path: ${{ runner.temp }}/release-notes.md
-          labels: "Type: Release"
-          assignees: ${{ github.actor }}
+      # A maintainer opens the PR: repository policy blocks Actions-created PRs,
+      # and GITHUB_TOKEN-created PRs would not trigger normal pull_request CI.
+      - name: Prepare branch and maintainer PR link
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_BASE: harbor/main
+        run: bash scripts/prepare-release-branch.sh

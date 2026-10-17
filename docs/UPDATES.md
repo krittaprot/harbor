@@ -26,7 +26,8 @@ Updater signing is separate from Apple Developer ID signing/notarization.
 ## Publishing
 
 1. Run **Create Release PR** on `harbor/main` with `patch`, `minor` or `major`.
-2. Update the changelog/release notes and wait for CI. The PR body becomes the release notes.
+2. Open the maintainer PR link in the workflow summary and apply **Type: Release**.
+   Update the changelog/release notes and wait for CI. The PR body becomes the release notes.
 3. Merge the release PR with the **Type: Release** label.
 4. The release workflow creates a draft, builds both Mac architectures, signs and uploads the
    updater archives, then checks that both platform entries, signatures, URLs and versions match.
@@ -34,9 +35,11 @@ Updater signing is separate from Apple Developer ID signing/notarization.
    (including bundle-specific target aliases) and fills the manifest's release notes from the PR.
    It uploads `SHA256SUMS` and publishes only after all assets pass validation.
 
-If repository settings prohibit Actions from opening a PR, the workflow may still create
-`release/vX.Y.Z`. Open that branch's PR with an authenticated maintainer account, targeting
-`harbor/main`, and apply **Type: Release**. There is no need to change branch protections.
+Release preparation deliberately creates only `release/vX.Y.Z`, then provides a PR link and
+suggested notes in the run summary. A maintainer opens the PR targeting `harbor/main`: this
+works with repository policy that blocks Actions-created PRs and triggers normal PR CI
+(PRs created with `GITHUB_TOKEN` do not). Reruns reuse an existing branch without overwriting
+maintainer commits. Network, authentication and push errors still fail the workflow.
 
 Never put signing material in workflow YAML, PR descriptions, logs, or fixtures. The fixture
 in `src-tauri/src/fixtures/updater.json` uses a separate disposable test key whose private

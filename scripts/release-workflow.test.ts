@@ -38,8 +38,14 @@ describe("create-release-pr workflow", () => {
   })
 
   test("labels the PR with the label the release workflow waits for", () => {
-    assert.ok(createReleasePrWorkflow.includes(`labels: "${RELEASE_LABEL}"`))
+    assert.ok(read("scripts/prepare-release-branch.sh").includes(`**${RELEASE_LABEL}**`))
     assert.ok(releaseWorkflow.includes(`'${RELEASE_LABEL}'`))
+  })
+
+  test("uses a maintainer handoff rather than a blocked bot PR or ignored failure", () => {
+    indexOrFail(createReleasePrWorkflow, "bash scripts/prepare-release-branch.sh")
+    assert.doesNotMatch(createReleasePrWorkflow, /peter-evans|continue-on-error|pull-requests: write/)
+    indexOrFail(createReleasePrWorkflow, "cancel-in-progress: false")
   })
 })
 
