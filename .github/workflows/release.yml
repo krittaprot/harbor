@@ -158,8 +158,9 @@ jobs:
             fi
           done
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/release-assets"
-          python3 scripts/verify-update-assets.py "$RUNNER_TEMP/release-assets" "$TAG"
-          gh release upload "$TAG" "$RUNNER_TEMP/release-assets/SHA256SUMS" --repo "$GITHUB_REPOSITORY" --clobber
+          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" > "$RUNNER_TEMP/release.json"
+          python3 scripts/verify-update-assets.py "$RUNNER_TEMP/release-assets" "$TAG" "$RUNNER_TEMP/release.json"
+          gh release upload "$TAG" "$RUNNER_TEMP/release-assets/latest.json" "$RUNNER_TEMP/release-assets/SHA256SUMS" --repo "$GITHUB_REPOSITORY" --clobber
           # Publishing creates the tag at the release PR's merge commit.
           gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
             -F draft=false \
