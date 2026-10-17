@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+## [1.5.3](docs/releases/v1.5.3.md) — 2026-10-17
+
+### Fixed
+
+- Release preparation now hands off a ready branch and PR link to a maintainer,
+  avoiding the repository's blocked bot-PR operation and ensuring normal PR CI runs.
+  Reruns preserve existing release-branch commits; real Git errors still fail.
+
+### Changed
+
+- Launch Harbor in the menu bar only, without a Dock/Command-Tab entry or an
+  automatically opened dashboard. Open Harbor and Settings remain available from
+  the menu-bar icon; closing the dashboard keeps monitoring active.
+- Friendlier update feedback: an animated checking indicator, a green “You’re all set!”
+  confirmation, and a distinct update-ready state with version and installation action.
+  Successful checks show their time; errors cannot appear as a successful check.
+  Animations respect Reduce Motion.
+
 ### Release tooling
 
 - Normalize tauri-action's floating updater URLs to version-pinned GitHub URLs and

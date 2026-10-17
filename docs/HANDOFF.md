@@ -2,6 +2,19 @@
 
 Updated 2026-10-17. Harbor's redesigned app and backend features are implemented through phase 10.
 
+## v1.5.3: menu-bar-only launch and update feedback
+
+Bundled launches use `LSUIElement`; direct/dev launches also set accessory activation policy.
+The dashboard starts hidden and remains available through the existing menu-bar commands.
+Native startup assertions verify the hidden windows and tray, then exercise `show_main`.
+An external macOS query verified accessory policy even while the dashboard was visible.
+
+Software updates now distinguish checking, current, available, error and install/restart
+states with friendly copy and state-specific visuals. Check time is recorded only after a
+successful backend response; animation respects Reduce Motion. A development-only React
+state gallery supports visual checks without changing or downloading installed software.
+See [verification](VERIFICATION.md) and [release notes](releases/v1.5.3.md).
+
 ## v1.5.2: in-app updates
 
 The release adds Settings → Software updates, backed by Tauri's signed updater and GitHub

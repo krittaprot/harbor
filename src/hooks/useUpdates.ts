@@ -10,6 +10,7 @@ export function useUpdates() {
   const [phase, setPhase] = useState<Phase>("idle")
   const [progress, setProgress] = useState<api.UpdateProgress | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [checkedAt, setCheckedAt] = useState<string | null>(null)
   const running = useRef(false)
   useEffect(() => {
     let active = true
@@ -23,11 +24,13 @@ export function useUpdates() {
     running.current = true
     setError(null)
     setAvailable(null)
+    setCheckedAt(null)
     setPhase("checking")
     try {
       setStatus(await api.updateStatus())
       const next = await api.checkUpdate()
       setAvailable(next)
+      setCheckedAt(new Date().toISOString())
       setPhase(next ? "available" : "current")
     } catch (e) {
       setError(String(e))
@@ -72,5 +75,5 @@ export function useUpdates() {
     }
   }
 
-  return { status, available, phase, progress, error, check, install, restart }
+  return { status, available, phase, progress, error, checkedAt, check, install, restart }
 }

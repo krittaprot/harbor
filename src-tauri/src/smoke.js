@@ -6,6 +6,9 @@
   const violations = [];
   document.addEventListener("securitypolicyviolation", e => violations.push({ directive: e.violatedDirective, uri: e.blockedURI }));
   try {
+    // Exercise the same explicit action as the menu-bar Open Harbor button.
+    await invoke("show_main");
+    assert(await invoke("plugin:window|is_visible", { label: "main" }), "menu bar opens the dashboard");
     await invoke("plugin:event|listen", {
       event: "harbor://snapshot", target: { kind: "Any" },
       handler: transformCallback(e => events.push(e.payload)),

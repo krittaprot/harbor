@@ -83,6 +83,10 @@ Start-at-login and notifications default to on. Startup registration is applied 
 launching an installed bundle; builds inside `target/` do not register themselves. Closing
 the main window keeps Harbor in the menu bar; use Settings → Quit Harbor to exit.
 
+Harbor launches quietly as a menu-bar app, with no Dock or Command-Tab entry and no
+dashboard window opening automatically. Click its menu-bar icon, then **Open Harbor**
+or **Settings** when needed. Opening the dashboard does not add a Dock icon.
+
 macOS may identify Harbor as **“harbor-app”** in its App Background Activity notification.
 That is Harbor's GUI executable; the app and startup entry are named **Harbor**.
 

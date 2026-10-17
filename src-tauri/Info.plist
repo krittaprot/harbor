@@ -5,6 +5,8 @@
   <string>Harbor</string>
   <key>CFBundleName</key>
   <string>Harbor</string>
+  <key>LSUIElement</key>
+  <true/>
   <key>NSAppleEventsUsageDescription</key>
   <string>Harbor uses System Events to list and manage your login apps, and to restart your Mac only when you confirm.</string>
 </dict></plist>
