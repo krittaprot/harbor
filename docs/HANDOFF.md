@@ -1,6 +1,29 @@
 # Harbor — continuation handoff
 
-Updated 2026-10-15. Harbor's redesigned app and backend features are implemented through phase 10.
+Updated 2026-10-17. Harbor's redesigned app and backend features are implemented through phase 10.
+
+## Tailscale unknown in the native app (2026-10-17)
+
+Reproduced using the running Finder-launched Harbor process's environment: Tailscale's
+bundled executable returned exit 0 with plain text, `The Tailscale GUI failed to start`
+(`Tailscale.CLIError error 3`), instead of JSON for `status --json`. A terminal-launched
+scan worked, so this was an execution-environment problem, not a disconnected VPN.
+
+The status helper now sets `TAILSCALE_BE_CLI=1` only in its child process, preserving the
+bounded subprocess runner and leaving Harbor's environment untouched. Explicit Rescan also
+refreshes system status immediately instead of retaining its up-to-60-second cached result.
+
+Verified with the identical GUI environment: the previous installed CLI returned
+`tailscale_up: null`; the fixed CLI returned `tailscale_up: true`. Passed 38 Rust unit tests
+(including child-environment isolation), 4 CLI contract tests, rustfmt, all-target/all-feature
+clippy with warnings denied, and the TypeScript/Vite production build.
+Native WebKit/IPC smoke acceptance also passed in that GUI environment: `tailscale_up: true`
+and the exported sidebar DOM reads **Tailscale connected**, with no CSP violations or missing
+port bindings. This verifies the native app path as well as the CLI path.
+These are prior local verification results. The fix is recorded as **Unreleased** in
+[CHANGELOG.md](../CHANGELOG.md); the published v1.5.1 download does not include it.
+Fresh publishing checks, including native acceptance and explicit Rescan, are recorded in
+[VERIFICATION.md](VERIFICATION.md#tailscale-status-publishing-checks--2026-10-17).
 
 ## MacBook scan coverage and background name: v1.5.1
 

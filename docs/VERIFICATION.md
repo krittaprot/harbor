@@ -19,6 +19,24 @@ from automated/native checks; a real reboot was not requested or performed.
 
 ## Checks passed
 
+### Tailscale status publishing checks — 2026-10-17
+
+- 38 Rust unit tests, 4 CLI contract tests, 51 frontend tests and 26 release-script tests.
+- rustfmt, all-target/all-feature clippy with warnings denied, oxlint, TypeScript checks,
+  version consistency and the Vite production build.
+- CLI `status --json` with `TERM` and `TAILSCALE_BE_CLI` removed from the parent environment:
+  `ok: true`, `tailscale_up: true`.
+- Rebuilt debug smoke bundle; native WebKit/IPC acceptance passed with those same variables
+  removed. The exported sidebar says **Tailscale connected**, explicit Rescan returns a newer
+  snapshot, and there are no CSP violations or missing bindings in the independent `lsof` check.
+- The first native run exposed a smoke-harness assumption that startup always selects Services.
+  The harness now selects Services explicitly, allowing a saved restart report to open first.
+
+These are source/debug-build checks, not a new release or an installed login/reboot test.
+The existing native harness uses local service fixtures; it is not a portable CI acceptance suite.
+
+### Initial implementation
+
 The checks below describe the initial implementation. Subsequent release checks are recorded
 in [HANDOFF.md](HANDOFF.md), including v1.5.1's native startup migration and CLI diagnostics.
 
