@@ -24,12 +24,14 @@ mod startup;
 mod system;
 mod tray;
 mod types;
+mod updates;
 
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         .plugin(
             tauri_plugin_autostart::Builder::new()
@@ -38,6 +40,7 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
+            app.manage(updates::Updates::default());
             app.manage(login::LoginCache::default());
             app.manage(snapshots::SnapshotState::default());
             tray::install(app)?;
@@ -65,6 +68,10 @@ pub fn run() {
             let _ = (webview, payload);
         })
         .invoke_handler(tauri::generate_handler![
+            updates::update_status,
+            updates::check_update,
+            updates::install_update,
+            updates::restart_after_update,
             tray::set_settings,
             tray::quit_harbor,
             harbor_commands::rescan_now,
@@ -119,6 +126,11 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app, event| {
+            if let tauri::RunEvent::ExitRequested { api, .. } = &event
+                && app.state::<updates::Updates>().installing()
+            {
+                api.prevent_exit();
+            }
             if matches!(event, tauri::RunEvent::Exit) {
                 app.state::<scanner::Scanner>().stop();
                 #[cfg(feature = "smoke-test")]

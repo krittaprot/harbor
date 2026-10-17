@@ -75,6 +75,10 @@ const fakeJobDetails: Record<string, LaunchdJob> = {
 
 type CommandHandler = (args: Record<string, unknown>) => unknown
 
+export class Channel<T> {
+  onmessage: (message: T) => void = () => {}
+}
+
 const handlers: Record<string, CommandHandler> = {
   list_jobs: () => [...fakeJobs],
   get_job_detail: (args) => {

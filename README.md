@@ -36,10 +36,10 @@ dependencies and menu-bar pins can be customized in `services.toml`.
 
 ## Download and install
 
-Download the **Apple Silicon (M-series) DMG** from
+Download the matching **Apple Silicon (M-series) or Intel DMG** from
 [GitHub Releases](https://github.com/krittaprot/harbor/releases/latest).
 Open the DMG and drag **Harbor.app** into **Applications**, then launch it there.
-This first packaged release is for Apple Silicon; an Intel DMG is not included.
+Use the `_aarch64.dmg` file for Apple Silicon, or `_x64.dmg` for Intel.
 
 The app is **ad-hoc signed, not Apple-notarized**. macOS may block the first launch:
 after trying to open Harbor, go to **System Settings → Privacy & Security → Open Anyway**
@@ -48,21 +48,36 @@ and confirm. Only approve a download you obtained from this repository. The rele
 
 The app includes the agent CLI at `/Applications/Harbor.app/Contents/MacOS/harbor`.
 
+### Updating Harbor
+
+Starting with v1.5.2, open **Settings → Software updates → Check for Updates**.
+Choose **Download & Install**, then **Restart Harbor** when installation finishes.
+Updates come from this repository's GitHub Releases and are signature-verified before
+installation. Your settings and monitored services stay in place.
+
+For v1.5.1 or earlier, quit Harbor and install the v1.5.2 DMG manually once, replacing
+the app in its existing Applications location. In-app installation works from
+`/Applications` or `~/Applications`; development builds and disk images can check only.
+If a download fails or macOS denies replacement, retry or use the DMG from GitHub Releases.
+
 ## Build and run
 
-Requires macOS, Xcode Command Line Tools, Rust 1.88 or newer, Node.js 22.18 or newer,
+Requires macOS, Xcode Command Line Tools, Rust 1.90 or newer, Node.js 22.18 or newer,
 and pnpm 10.28.2 (the version pinned in `package.json`).
 
 ```bash
 git clone https://github.com/krittaprot/harbor.git
 cd harbor
 pnpm install --frozen-lockfile
-pnpm tauri build --bundles app
+pnpm tauri build --bundles app --config '{"bundle":{"createUpdaterArtifacts":false}}'
 open "src-tauri/target/release/bundle/macos/Harbor.app"
 ```
 
 Copy the resulting bundle to `~/Applications/` or `/Applications/` to install it. Local builds
-are ad-hoc signed, not notarized. To create a disk image, use `pnpm tauri build --bundles dmg`.
+are ad-hoc signed, not notarized. To create a local disk image, use
+`pnpm tauri build --bundles dmg --config '{"bundle":{"createUpdaterArtifacts":false}}'`.
+The override skips updater artifact signing for local builds; release CI creates signed
+updater packages. See [release maintenance](docs/UPDATES.md).
 
 Start-at-login and notifications default to on. Startup registration is applied only when
 launching an installed bundle; builds inside `target/` do not register themselves. Closing

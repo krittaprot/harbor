@@ -78,6 +78,16 @@
     const loginResult = document.querySelector('.h-page-content [role="alert"]')?.textContent ?? 'Login list rendered';
     nav('Services').click();
     await delay(300);
+    nav('Settings').click();
+    await delay(300);
+    assert(document.querySelector('h1')?.textContent === 'Settings', 'settings navigation');
+    assert(document.querySelector('#harbor-updates-title')?.textContent === 'Software updates', 'native updates card');
+    const updaterStatus = await invoke('update_status');
+    assert(updaterStatus.current_version && !updaterStatus.can_install, 'smoke builds can check but cannot install');
+    assert([...document.querySelectorAll('button')].some(b => b.textContent === 'Check for Updates'), 'native update check button');
+    await visual('settings');
+    nav('Services').click();
+    await delay(300);
     await invoke('plugin:event|emit', {event:'harbor://smoke-popover',payload:null});
     await delay(700);
     assert(document.documentElement.scrollWidth <= innerWidth, "no horizontal page overflow");
@@ -135,6 +145,7 @@
       services: second.services.filter(s => !s.apple).map(s => ({id:s.id, kind:s.kind, jobs:s.jobs.map(j=>j.label), processes:s.processes.length, ports:s.ports.map(p=>p.port), health:s.health, state:s.state})),
       unmanaged: second.unmanaged.map(g => ({name:g.name, copies:g.copies.length, verdict:g.verdict})),
       system: second.system,
+      updater: updaterStatus,
       adoption,
       login: loginResult,
     }});

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react"
 import { listen } from "@tauri-apps/api/event"
 import { Sidebar, type View, type Filter } from "@/components/Sidebar"
 import { useSnapshot } from "@/hooks/useSnapshot"
+import { useUpdates } from "@/hooks/useUpdates"
+import { UpdateCard } from "@/components/UpdateCard"
 import { Services } from "@/views/Services"
 import { OpenAtLogin } from "@/views/OpenAtLogin"
 import { RestartReadiness } from "@/views/RestartReadiness"
@@ -36,6 +38,7 @@ type Confirmation = {
 }
 function App() {
   const { snapshot, error, busy, refresh } = useSnapshot()
+  const updater = useUpdates()
   const [view, setView] = useState<View>("services")
   const [filter, setFilter] = useState<Filter>("all")
   const [actionError, setActionError] = useState<string | null>(null)
@@ -150,7 +153,7 @@ function App() {
             </button>
           </div>
         )}
-        {!snapshot && view !== "jobs" && (
+        {!snapshot && view !== "jobs" && view !== "settings" && (
           <div className="h-empty h-initial">
             <h1>Harbor</h1>
             <p>Reading services, processes and listening ports…</p>
@@ -238,7 +241,7 @@ function App() {
             <LegacyJobs />
           </div>
         )}
-        {snapshot && view === "settings" && (
+        {view === "settings" && (
           <>
             <header className="h-page-header">
               <div>
@@ -247,6 +250,7 @@ function App() {
               </div>
             </header>
             <div className="h-page-content">
+              <UpdateCard updater={updater} />
               <div className="h-card">
                 {settings &&
                   (

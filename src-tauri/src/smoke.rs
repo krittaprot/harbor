@@ -50,7 +50,10 @@ pub fn install(app: &tauri::App) {
     app.listen("harbor://smoke-dom", |event| {
         if let Ok(data) = serde_json::from_str::<serde_json::Value>(event.payload())
             && let (Some(stage), Some(html)) = (data["stage"].as_str(), data["html"].as_str())
-            && ["light", "dark", "restart", "adopt", "login", "popover"].contains(&stage)
+            && [
+                "light", "dark", "restart", "adopt", "login", "popover", "settings",
+            ]
+            .contains(&stage)
         {
             let dir = crate::config::directory().join("diagnostics");
             if std::fs::create_dir_all(&dir).is_ok() {
