@@ -19,6 +19,22 @@ from automated/native checks; a real reboot was not requested or performed.
 
 ## Checks passed
 
+### In-app updater — v1.5.2, 2026-10-17
+
+- 42 Rust tests, 4 CLI contract tests, 57 frontend tests, 26 release-script tests and 3
+  updater asset-validation tests; formatting, lint, type checks, version consistency and build.
+- The real updater library checked a loopback manifest, downloaded and verified a signed
+  fixture, and replaced only its temporary fixture app. A tampered archive left the old
+  fixture untouched; an older release was not offered.
+- Native WebKit/IPC smoke acceptance passed with the Software updates card, correct version,
+  check-only smoke restrictions, no CSP errors and no missing port bindings. The native-exported
+  Settings DOM was rendered and inspected at the app's minimum width without overflow.
+- Release signing was exercised locally with an encrypted key stored outside the repository.
+  Public release artifacts must still pass the release workflow's two-architecture manifest checks.
+
+Real future-version upgrade/relaunch and administrator-prompt acceptance on installed Macs
+remain open. Existing v1.5.1 installations require one manual upgrade to get the updater.
+
 ### Tailscale status publishing checks — 2026-10-17
 
 - 38 Rust unit tests, 4 CLI contract tests, 51 frontend tests and 26 release-script tests.
@@ -86,11 +102,11 @@ notifications, or repairs to the Teams/Java installation files.
 
 ## Reproduce
 
-Run from the project root, with ProVault mounted. No background dev server is needed.
+Run from the project root, with the local service fixtures available. No background dev server is needed.
 
 ```bash
 pnpm build
-pnpm tauri build --debug --features smoke-test --bundles app
+pnpm tauri build --debug --features smoke-test --bundles app --config '{"bundle":{"createUpdaterArtifacts":false}}'
 src-tauri/target/debug/harbor-app
 uv run scripts/render-smoke.py
 ```
@@ -110,8 +126,8 @@ and the home directory, so it does not depend on launchd access to the project v
 Normal bundles must be built **without** `smoke-test` (the smoke executable exits itself):
 
 ```bash
-pnpm tauri build --bundles app
-pnpm tauri build --debug --bundles app
+pnpm tauri build --bundles app --config '{"bundle":{"createUpdaterArtifacts":false}}'
+pnpm tauri build --debug --bundles app --config '{"bundle":{"createUpdaterArtifacts":false}}'
 open "src-tauri/target/release/bundle/macos/Harbor.app"
 ```
 

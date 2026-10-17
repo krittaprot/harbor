@@ -1,6 +1,14 @@
 /* Hallmark · macrostructure: Workbench · theme: supplied Harbor design · tone: native utilitarian · anchor hue: blue */
 /* Audience: owner of mini · use: manage services and restart readiness. Pre-emit critique: P5 H4 E4 S5 R4 V4. */
 @import "../tokens.css";
+.h-update-card h2 { margin: 0; font-size: 14px; }
+.h-update-body { display: grid; gap: 12px; padding: 0 18px 18px; }
+.h-update-body > p { margin: 0; }
+.h-update-body > button, .h-update-body > a { justify-self: start; }
+.h-update-body progress { width: 100%; accent-color: var(--h-blue); }
+.h-update-notes { font-size: 12px; }
+.h-update-notes summary { cursor: pointer; }
+.h-update-notes p { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow-y: auto; }
 html,
 body {
   overflow-x: clip;

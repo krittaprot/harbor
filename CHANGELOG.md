@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## [1.5.2](docs/releases/v1.5.2.md) — 2026-10-17
+
+### Added
+
+- Settings → Software updates: check GitHub Releases, review release notes, download
+  and install a signed update, then restart Harbor when ready.
+- Download progress, signature verification, retryable errors, installation-location
+  checks, and protection against duplicate installs or quitting during app replacement.
+- Signed Apple Silicon and Intel updater archives, a validated `latest.json`, and
+  SHA-256 checksums in the release workflow. Install v1.5.2 manually once to enable
+  in-app updates for future releases.
+
 ### Fixed
 
 - Detect Tailscale status when Harbor is launched from Finder or at login by explicitly

@@ -2,6 +2,21 @@
 
 Updated 2026-10-17. Harbor's redesigned app and backend features are implemented through phase 10.
 
+## v1.5.2: in-app updates
+
+The release adds Settings → Software updates, backed by Tauri's signed updater and GitHub
+Releases. Check, install and restart are explicit actions. Backend state rejects duplicate
+operations, pins the selected version and protects bundle replacement from quit requests.
+The release workflow signs both Mac architectures and validates their manifest before publication.
+See [UPDATES.md](UPDATES.md) for maintenance and [v1.5.2 notes](releases/v1.5.2.md) for installation.
+
+Local checks passed: 42 Rust tests (including signed fixture installation, tamper rejection and
+downgrade rejection), 4 CLI contract tests, 57 frontend tests, 26 release-script tests, 3 updater
+asset tests, rustfmt, clippy with warnings denied, lint, TypeScript and production frontend build.
+Native WebKit acceptance verifies the Settings card and update-status IPC. It is intentionally
+check-only in smoke/debug builds. Future-version upgrade, administrator-prompt and restart
+acceptance on an installed Mac remain separate from fixture installation tests.
+
 ## Tailscale unknown in the native app (2026-10-17)
 
 Reproduced using the running Finder-launched Harbor process's environment: Tailscale's
@@ -20,7 +35,7 @@ clippy with warnings denied, and the TypeScript/Vite production build.
 Native WebKit/IPC smoke acceptance also passed in that GUI environment: `tailscale_up: true`
 and the exported sidebar DOM reads **Tailscale connected**, with no CSP violations or missing
 port bindings. This verifies the native app path as well as the CLI path.
-These are prior local verification results. The fix is recorded as **Unreleased** in
+These are prior local verification results. The fix is included in the **v1.5.2** entry in
 [CHANGELOG.md](../CHANGELOG.md); the published v1.5.1 download does not include it.
 Fresh publishing checks, including native acceptance and explicit Rescan, are recorded in
 [VERIFICATION.md](VERIFICATION.md#tailscale-status-publishing-checks--2026-10-17).

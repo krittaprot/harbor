@@ -58,7 +58,7 @@ describe("release workflow", () => {
 
   test("builds the merge commit, not the PR head", () => {
     const refs = releaseWorkflow.match(/ref: \$\{\{ github\.event\.pull_request\.merge_commit_sha \}\}/g)
-    assert.equal(refs?.length, 2, "create-release and build must check out the merge commit")
+    assert.equal(refs?.length, 3, "create-release, build and validation must check out the merge commit")
   })
 
   test("uploads to the draft release it created, never one derived from tauri.conf.json", () => {
@@ -88,7 +88,12 @@ describe("release workflow", () => {
       const archive = indexOrFail(releaseWorkflow, `"${productName}_${arch}.app.tar.gz"`)
       const dmg = indexOrFail(releaseWorkflow, `"${productName}_\${version}_${arch}.dmg"`)
       assert.ok(archive < publish && dmg < publish)
+      assert.ok(indexOrFail(releaseWorkflow, `"${productName}_${arch}.app.tar.gz.sig"`) < publish)
     }
+    assert.ok(indexOrFail(releaseWorkflow, "python3 scripts/verify-update-assets.py") < publish)
+    assert.ok(indexOrFail(releaseWorkflow, "release-assets/SHA256SUMS") < publish)
+    indexOrFail(releaseWorkflow, "includeUpdaterJson: true")
+    indexOrFail(releaseWorkflow, "TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}")
   })
 })
 
