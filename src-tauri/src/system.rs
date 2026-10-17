@@ -31,7 +31,13 @@ pub fn scan(uid: u32) -> SystemInfo {
     .into_iter()
     .find(|p| Path::new(p).exists());
     let tailscale_up = tailscale
-        .and_then(|bin| scan_command::output(bin, &["status", "--json"]).ok())
+        .and_then(|bin| {
+            // Finder/launchd apps may lack TERM. Without this flag the macOS
+            // Tailscale executable can take its GUI startup path, returning a
+            // plain-text error with exit code 0 instead of the requested JSON.
+            scan_command::output_with_env(bin, &["status", "--json"], &[("TAILSCALE_BE_CLI", "1")])
+                .ok()
+        })
         .filter(|o| o.status.success())
         .and_then(|o| serde_json::from_slice::<serde_json::Value>(&o.stdout).ok())
         .and_then(|v| v["BackendState"].as_str().map(|s| s == "Running"));

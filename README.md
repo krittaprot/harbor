@@ -115,6 +115,16 @@ See the [build plan](docs/PLAN.md), [handoff](docs/HANDOFF.md) and
 Bug reports and contributions are welcome through [GitHub Issues](https://github.com/krittaprot/harbor/issues)
 and pull requests. The default development branch is `harbor/main`.
 
+### System status
+
+Harbor checks Tailscale through its local CLI, including when Harbor is launched from
+Finder or at login. The helper explicitly selects CLI mode without changing Harbor's
+environment. Missing executables, command failures and unreadable status remain **Unknown**.
+System status refreshes every 60 seconds during background scanning; **Rescan** requests
+a fresh check immediately, including Tailscale and FileVault status.
+
+See the [changelog](CHANGELOG.md) for unreleased improvements and previous release notes.
+
 ## License and attribution
 
 [MIT](LICENSE). Copyright (c) azu; Harbor additions copyright (c) 2026 ode.
